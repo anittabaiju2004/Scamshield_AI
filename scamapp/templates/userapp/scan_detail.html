@@ -1,0 +1,189 @@
+
+{% extends 'userapp/user_dashboard.html' %}
+
+{% block content %}
+
+<section class="p-5 sm:p-6 text-gray-900 dark:text-gray-100">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+
+        <div>
+            <span class="text-xs font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
+                Message Scanner
+            </span>
+
+            <h2 class="text-2xl font-bold mt-1 text-gray-900 dark:text-white">
+                Scan Details
+            </h2>
+
+            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Review your complete message analysis.
+            </p>
+        </div>
+
+        <a href="{% url 'scan_history' %}"
+           class="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+
+            <span class="material-symbols-outlined text-lg">
+                arrow_back
+            </span>
+            Back to History
+
+        </a>
+
+    </div>
+
+
+    <!-- Scan Information -->
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-card p-5 mb-6">
+
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-5">
+
+            <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Scan Reference
+                </p>
+
+                <h3 class="text-lg font-bold mt-1 text-gray-900 dark:text-white">
+                    SCN-{{ scan.id|stringformat:"04d" }}
+                </h3>
+            </div>
+
+            <span class="text-xs text-gray-500 dark:text-gray-400">
+                {{ scan.created_at|date:"d M Y, h:i A" }}
+            </span>
+
+        </div>
+
+
+        <!-- Original Message -->
+        <div class="mb-6">
+
+            <h4 class="font-bold mb-3 text-gray-900 dark:text-white">
+                Analyzed Message
+            </h4>
+
+            <div class="p-4 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+
+                <p class="text-sm leading-7 text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words">{{ scan.message }}</p>
+
+            </div>
+
+        </div>
+
+
+        <!-- Prediction Result -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            <div class="p-5 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                    Predicted Category
+                </p>
+
+                <h2 class="text-2xl font-bold mt-2
+                    {% if scan.result == 'Legitimate' %}
+                        text-emerald-600 dark:text-emerald-400
+                    {% elif scan.result == 'Spam' %}
+                        text-orange-600 dark:text-orange-400
+                    {% else %}
+                        text-red-600 dark:text-red-400
+                    {% endif %}">
+
+                    {{ scan.result }}
+
+                </h2>
+
+            </div>
+
+
+            <div class="p-5 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                    Prediction Confidence
+                </p>
+
+                <h2 class="text-2xl font-bold mt-2 text-gray-900 dark:text-white">
+                    {{ scan.confidence }}%
+                </h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Category Probabilities -->
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-card p-5">
+
+        <h3 class="text-lg font-bold mb-2 text-gray-900 dark:text-white">
+            Category Probability Analysis
+        </h3>
+
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-5">
+            Model-estimated probability for each message category.
+        </p>
+
+
+        {% for label, probability in scan.probabilities.items %}
+
+        <div class="mb-5">
+
+            <div class="flex justify-between items-center text-sm mb-2">
+
+                <span class="font-semibold text-gray-800 dark:text-gray-200">
+                    {{ label }}
+                </span>
+
+                <span class="font-bold text-gray-900 dark:text-white">
+                    {{ probability }}%
+                </span>
+
+            </div>
+
+            <div class="w-full h-3 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+
+                <div
+                    class="h-full rounded-full
+                    {% if label == 'Legitimate' %}
+                        bg-emerald-500
+                    {% elif label == 'Spam' %}
+                        bg-orange-500
+                    {% else %}
+                        bg-red-500
+                    {% endif %}"
+                    style="width: {{ probability }}%">
+                </div>
+
+            </div>
+
+        </div>
+
+        {% empty %}
+
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+            Probability details are not available for this scan.
+        </p>
+
+        {% endfor %}
+
+
+        <div class="mt-6 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 text-sm text-blue-800 dark:text-blue-200">
+
+            <span class="material-symbols-outlined align-middle mr-1">
+                info
+            </span>
+
+            This result is generated by a machine learning model.
+            It is an estimate and should not be treated as a guarantee
+            that a message is safe or malicious.
+
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}

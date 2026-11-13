@@ -1,0 +1,150 @@
+{% extends 'adminapp/admin_dashboard.html' %}
+
+{% block content %}
+
+<div class="max-w-7xl mx-auto px-4 py-8">
+
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-on-surface">Risk Analysis</h1>
+        <p class="text-sm text-on-surface-variant mt-1">
+            Analyze scanning activity and detected security risks across the platform.
+        </p>
+    </div>
+
+    <!-- Overall Statistics -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+
+        <div class="bg-card border border-line rounded-xl p-5">
+            <p class="text-sm text-on-surface-variant">Total Scans</p>
+            <h2 class="text-3xl font-bold text-on-surface mt-2">{{ total_scans }}</h2>
+        </div>
+
+        <div class="bg-card border border-line rounded-xl p-5">
+            <p class="text-sm text-on-surface-variant">Message Scans</p>
+            <h2 class="text-3xl font-bold text-emerald-600 mt-2">{{ message_total }}</h2>
+        </div>
+
+        <div class="bg-card border border-line rounded-xl p-5">
+            <p class="text-sm text-on-surface-variant">URL Scans</p>
+            <h2 class="text-3xl font-bold text-blue-600 mt-2">{{ url_total }}</h2>
+        </div>
+
+        <div class="bg-card border border-line rounded-xl p-5">
+            <p class="text-sm text-on-surface-variant">Flagged Results</p>
+            <h2 class="text-3xl font-bold text-red-600 mt-2">{{ detected_count }}</h2>
+        </div>
+
+    </div>
+
+    <!-- Message Risk Analysis -->
+    <div class="bg-card border border-line rounded-xl p-5 mb-8">
+
+        <h2 class="text-lg font-bold text-on-surface mb-5">
+            Message Scanner Analysis
+        </h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+            <div class="bg-soft rounded-xl p-5">
+                <p class="text-sm text-on-surface-variant">Legitimate</p>
+                <h3 class="text-2xl font-bold text-emerald-600 mt-2">
+                    {{ legitimate_count }}
+                </h3>
+            </div>
+
+            <div class="bg-soft rounded-xl p-5">
+                <p class="text-sm text-on-surface-variant">Scam / Phishing</p>
+                <h3 class="text-2xl font-bold text-red-600 mt-2">
+                    {{ phishing_count }}
+                </h3>
+            </div>
+
+            <div class="bg-soft rounded-xl p-5">
+                <p class="text-sm text-on-surface-variant">Spam</p>
+                <h3 class="text-2xl font-bold text-amber-600 mt-2">
+                    {{ spam_count }}
+                </h3>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- URL Risk Analysis -->
+    <div class="bg-card border border-line rounded-xl p-5 mb-8">
+
+        <h2 class="text-lg font-bold text-on-surface mb-5">
+            URL Scanner Analysis
+        </h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+            <div class="bg-soft rounded-xl p-5">
+                <p class="text-sm text-on-surface-variant">Low Risk</p>
+                <h3 class="text-2xl font-bold text-emerald-600 mt-2">
+                    {{ low_risk_count }}
+                </h3>
+            </div>
+
+            <div class="bg-soft rounded-xl p-5">
+                <p class="text-sm text-on-surface-variant">Suspicious</p>
+                <h3 class="text-2xl font-bold text-amber-600 mt-2">
+                    {{ suspicious_count }}
+                </h3>
+            </div>
+
+            <div class="bg-soft rounded-xl p-5">
+                <p class="text-sm text-on-surface-variant">High Risk</p>
+                <h3 class="text-2xl font-bold text-red-600 mt-2">
+                    {{ high_risk_count }}
+                </h3>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Scanner Usage -->
+    <div class="bg-card border border-line rounded-xl p-5">
+
+        <h2 class="text-lg font-bold text-on-surface mb-5">
+            Scanner Usage Comparison
+        </h2>
+
+        <div class="space-y-5">
+
+            <div>
+                <div class="flex justify-between text-sm mb-2">
+                    <span>Message Scanner</span>
+                    <span class="font-semibold">{{ message_total }}</span>
+                </div>
+
+                <div class="w-full h-3 rounded-full bg-soft overflow-hidden">
+                    <div
+                        class="h-full rounded-full bg-green-500"
+                        style="width: {% if total_scans %}{% widthratio message_total total_scans 100 %}{% else %}0{% endif %}%">
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex justify-between text-sm mb-2">
+                    <span>URL Scanner</span>
+                    <span class="font-semibold">{{ url_total }}</span>
+                </div>
+
+                <div class="w-full h-3 rounded-full bg-soft overflow-hidden">
+                    <div
+                        class="h-full rounded-full bg-blue-500"
+                        style="width: {% if total_scans %}{% widthratio url_total total_scans 100 %}{% else %}0{% endif %}%">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

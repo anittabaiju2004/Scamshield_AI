@@ -1,0 +1,749 @@
+
+{% extends 'userapp/user_dashboard.html' %}
+
+{% block content %}
+
+<section class="max-w-6xl mx-auto w-full p-4 sm:p-6 flex flex-col gap-6">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+
+        <div class="flex items-center gap-4">
+
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[26px]">language</span>
+            </div>
+
+            <div>
+                <h2 class="text-2xl font-extrabold tracking-tight">
+                    URL Scanner
+                </h2>
+
+                <p class="text-sm text-muted mt-0.5">
+                    Analyze website URLs for suspicious patterns and potential phishing indicators.
+                </p>
+            </div>
+
+        </div>
+
+        <span class="inline-flex self-start sm:self-auto items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs font-bold">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            Rule-based scanner
+        </span>
+
+    </div>
+
+
+    <!-- Django Messages -->
+    {% if messages %}
+    <div class="flex flex-col gap-2">
+
+        {% for message in messages %}
+
+        <div class="scanner-alert flex items-center gap-3 p-3.5 rounded-xl text-sm font-semibold
+            {% if message.tags == 'success' %}
+                bg-emerald-500/10 text-emerald-700 dark:text-emerald-300
+            {% elif message.tags == 'warning' %}
+                bg-amber-500/10 text-amber-700 dark:text-amber-300
+            {% else %}
+                bg-red-500/10 text-red-700 dark:text-red-300
+            {% endif %}"
+            role="alert">
+
+            <span class="material-symbols-outlined text-xl">
+                {% if message.tags == 'success' %}check_circle
+                {% elif message.tags == 'warning' %}warning
+                {% else %}error{% endif %}
+            </span>
+
+            <span class="flex-1">{{ message }}</span>
+
+            <button type="button" class="alert-close">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+    {% endif %}
+
+
+    <!-- Main Scanner -->
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+
+        <!-- URL Input -->
+        <div class="{% if prediction %}lg:col-span-2{% else %}lg:col-span-3{% endif %} bg-card rounded-2xl shadow-card p-5 sm:p-6 border border-line">
+
+            <div class="flex items-center gap-2 mb-5">
+
+                <span class="material-symbols-outlined text-emerald-600 dark:text-emerald-400">
+                    travel_explore
+                </span>
+
+                <h3 class="font-bold text-lg">
+                    Website Analysis
+                </h3>
+
+            </div>
+
+
+            <form method="POST" id="urlScanForm" class="flex flex-col gap-4">
+
+                {% csrf_token %}
+
+                <div>
+
+                    <label for="urlInput" class="text-sm font-bold block mb-2">
+                        Enter Website URL
+                    </label>
+
+                    <div class="relative">
+
+                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none">
+                            link
+                        </span>
+
+                        <input
+                            type="text"
+                            name="url"
+                            id="urlInput"
+                            maxlength="2048"
+                            required
+                            autocomplete="url"
+                            value="{{ request.POST.url|default:'' }}"
+                            placeholder="https://example.com"
+                            class="w-full h-12 pl-11 pr-4 rounded-xl bg-surface-container-low border border-outline/40 text-on-surface placeholder:text-on-surface-variant caret-primary outline-none focus:border-primary focus:ring-4 focus:ring-primary/15 transition-colors">
+
+                    </div>
+
+                    <p class="text-xs text-muted mt-2">
+                        Enter a website address including its domain name.
+                    </p>
+
+                </div>
+
+
+                <!-- Sample URLs -->
+                <div>
+
+                    <p class="text-xs font-semibold text-muted mb-2">
+                        Try a sample:
+                    </p>
+
+                    <div class="flex flex-wrap gap-2">
+
+                        <button type="button"
+                            class="url-sample px-3 py-2 rounded-lg bg-soft text-xs font-semibold hover:bg-emerald-500/10 hover:text-emerald-600 transition"
+                            data-url="http://secure-login-verify.example.com/account">
+                            Suspicious URL
+                        </button>
+
+                        <button type="button"
+                            class="url-sample px-3 py-2 rounded-lg bg-soft text-xs font-semibold hover:bg-emerald-500/10 hover:text-emerald-600 transition"
+                            data-url="https://www.google.com">
+                            Normal website
+                        </button>
+
+                        <button type="button"
+                            class="url-sample px-3 py-2 rounded-lg bg-soft text-xs font-semibold hover:bg-emerald-500/10 hover:text-emerald-600 transition"
+                            data-url="https://bit.ly/example">
+                            Shortened URL
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <p id="urlError" class="hidden text-xs font-semibold text-red-600 dark:text-red-400">
+                    Please enter a website URL.
+                </p>
+
+
+                <!-- Buttons -->
+                <div class="flex gap-2">
+
+                    <button type="button" id="clearUrlBtn"
+                        class="h-11 px-4 rounded-xl bg-soft text-sm font-semibold hover:bg-line transition">
+                        Clear
+                    </button>
+
+                    <button type="submit" id="urlScanBtn"
+                        class="flex-1 h-11 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition disabled:opacity-60">
+
+                        <span class="material-symbols-outlined text-lg" id="urlScanIcon">
+                            shield_search
+                        </span>
+
+                        <span id="urlScanText">Scan Website</span>
+
+                    </button>
+
+                </div>
+
+
+                <p class="flex items-center gap-1.5 text-[11px] text-muted">
+                    <span class="material-symbols-outlined text-sm">info</span>
+                    This scanner analyzes URL patterns. It does not visit the submitted website.
+                </p>
+
+            </form>
+
+        </div>
+
+
+        <!-- Result / Tips -->
+        {% if prediction %}
+
+        <div class="lg:col-span-3 bg-card rounded-2xl shadow-card overflow-hidden border border-line">
+
+            <!-- Result Banner -->
+            <div class="p-5 sm:p-6 flex items-center gap-4
+                {% if prediction.result == 'Low Risk' %}
+                    bg-emerald-500/10
+                {% elif prediction.result == 'Suspicious' %}
+                    bg-amber-500/10
+                {% else %}
+                    bg-red-500/10
+                {% endif %}">
+
+                <div class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0
+                    {% if prediction.result == 'Low Risk' %}
+                        bg-emerald-500
+                    {% elif prediction.result == 'Suspicious' %}
+                        bg-amber-500
+                    {% else %}
+                        bg-red-600
+                    {% endif %} text-white">
+
+                    <span class="material-symbols-outlined text-[30px]">
+                        {% if prediction.result == 'Low Risk' %}
+                            verified_user
+                        {% elif prediction.result == 'Suspicious' %}
+                            warning
+                        {% else %}
+                            gpp_bad
+                        {% endif %}
+                    </span>
+
+                </div>
+
+                <div class="flex-1 min-w-0">
+
+                    <p class="text-xs font-bold uppercase tracking-wider text-muted">
+                        URL Analysis Result
+                    </p>
+
+                    <h3 class="text-2xl sm:text-3xl font-extrabold tracking-tight
+                        {% if prediction.result == 'Low Risk' %}
+                            text-emerald-600 dark:text-emerald-400
+                        {% elif prediction.result == 'Suspicious' %}
+                            text-amber-600 dark:text-amber-400
+                        {% else %}
+                            text-red-600 dark:text-red-400
+                        {% endif %}">
+                        {{ prediction.result }}
+                    </h3>
+
+                </div>
+
+                <!-- Risk Score -->
+                <div class="text-center shrink-0">
+
+                    <p class="text-3xl font-extrabold">
+                        {{ prediction.risk_score }}
+                    </p>
+
+                    <p class="text-[10px] uppercase tracking-wider text-muted font-bold">
+                        Risk / 100
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="p-5 sm:p-6 flex flex-col gap-5">
+
+                <!-- Scanned URL -->
+                <div>
+
+                    <h4 class="text-sm font-bold mb-2">
+                        Analyzed Website
+                    </h4>
+
+                    <div class="p-3 rounded-xl bg-surface-container-low border border-line">
+
+                        <p class="text-sm break-all font-medium">
+                            {{ prediction.url }}
+                        </p>
+
+                        <p class="text-xs text-muted mt-2">
+                            Domain: {{ prediction.domain }}
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Risk Progress -->
+                <div>
+
+                    <div class="flex justify-between text-sm mb-2">
+
+                        <span class="font-bold">
+                            Risk Level
+                        </span>
+
+                        <span class="font-bold">
+                            {{ prediction.risk_score }}/100
+                        </span>
+
+                    </div>
+
+                    <div class="w-full h-3 rounded-full bg-surface-container-high overflow-hidden">
+
+                        <div
+                            class="h-full rounded-full transition-all duration-700
+                            {% if prediction.result == 'Low Risk' %}
+                                bg-emerald-500
+                            {% elif prediction.result == 'Suspicious' %}
+                                bg-amber-500
+                            {% else %}
+                                bg-red-600
+                            {% endif %}"
+                            style="width: {{ prediction.risk_score }}%">
+                        </div>
+
+                    </div>
+
+                    <div class="flex justify-between text-[10px] text-muted mt-2">
+                        <span>Low Risk</span>
+                        <span>Suspicious</span>
+                        <span>High Risk</span>
+                    </div>
+
+                </div>
+
+
+                <!-- Detected Reasons -->
+                <div>
+
+                    <h4 class="text-sm font-bold mb-3">
+                        Detected Indicators
+                    </h4>
+
+                    <div class="flex flex-col gap-3">
+
+                        {% for item in prediction.reasons %}
+
+                        <div class="flex items-start gap-3 p-3 rounded-xl bg-amber-500/10">
+
+                            <span class="material-symbols-outlined text-amber-600 dark:text-amber-400">
+                                warning
+                            </span>
+
+                            <div class="flex-1">
+
+                                <p class="text-sm font-medium">
+                                    {{ item.reason }}
+                                </p>
+
+                            </div>
+
+                            <span class="text-xs font-bold text-amber-700 dark:text-amber-300 whitespace-nowrap">
+                                +{{ item.points }}
+                            </span>
+
+                        </div>
+
+                        {% empty %}
+
+                        <div class="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+
+                            <span class="material-symbols-outlined">
+                                check_circle
+                            </span>
+
+                            <p class="text-sm font-medium">
+                                No suspicious patterns were detected by the current checks.
+                            </p>
+
+                        </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                </div>
+
+
+                <!-- Recommendations -->
+                <div class="p-4 rounded-xl bg-soft">
+
+                    <h4 class="text-sm font-bold mb-2 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-emerald-600 dark:text-emerald-400">
+                            tips_and_updates
+                        </span>
+                        Recommended Action
+                    </h4>
+
+                    {% if prediction.result == 'Low Risk' %}
+
+                    <ul class="text-sm text-muted space-y-1.5 list-disc pl-5">
+                        <li>No suspicious patterns were detected by this scanner.</li>
+                        <li>Verify the website address before entering personal information.</li>
+                        <li>Do not share passwords, PINs or OTPs.</li>
+                    </ul>
+
+                    {% elif prediction.result == 'Suspicious' %}
+
+                    <ul class="text-sm text-muted space-y-1.5 list-disc pl-5">
+                        <li>Avoid opening the website until you verify its authenticity.</li>
+                        <li>Check the domain carefully for misspellings and misleading words.</li>
+                        <li>Never enter banking details, passwords or OTPs on an unverified website.</li>
+                    </ul>
+
+                    {% else %}
+
+                    <ul class="text-sm text-muted space-y-1.5 list-disc pl-5">
+                        <li>Do not open this URL or enter any personal information.</li>
+                        <li>Do not download files from the website.</li>
+                        <li>Verify the website through its official domain or a trusted security service.</li>
+                    </ul>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        {% else %}
+
+        <!-- Scanner Tips -->
+        <div class="lg:col-span-2 bg-card rounded-2xl shadow-card p-5 sm:p-6 flex flex-col gap-4 border border-line">
+
+            <h3 class="text-base font-bold flex items-center gap-2">
+
+                <span class="material-symbols-outlined text-emerald-600 dark:text-emerald-400">
+                    lightbulb
+                </span>
+
+                Common suspicious URL signs
+
+            </h3>
+
+
+            <ul class="flex flex-col gap-4 text-sm text-muted">
+
+                <li class="flex gap-3">
+
+                    <span class="material-symbols-outlined text-amber-500 shrink-0">
+                        language
+                    </span>
+
+                    <span>
+                        <strong class="text-on-surface">Unusual domains</strong>
+                        — misspelled brand names or unfamiliar domain names.
+                    </span>
+
+                </li>
+
+
+                <li class="flex gap-3">
+
+                    <span class="material-symbols-outlined text-amber-500 shrink-0">
+                        lock_open
+                    </span>
+
+                    <span>
+                        <strong class="text-on-surface">Insecure connection</strong>
+                        — websites using HTTP instead of HTTPS.
+                    </span>
+
+                </li>
+
+
+                <li class="flex gap-3">
+
+                    <span class="material-symbols-outlined text-amber-500 shrink-0">
+                        alternate_email
+                    </span>
+
+                    <span>
+                        <strong class="text-on-surface">Misleading URL structure</strong>
+                        — unexpected @ symbols or unusual address formats.
+                    </span>
+
+                </li>
+
+
+                <li class="flex gap-3">
+
+                    <span class="material-symbols-outlined text-amber-500 shrink-0">
+                        link
+                    </span>
+
+                    <span>
+                        <strong class="text-on-surface">Shortened links</strong>
+                        — links that hide their final destination.
+                    </span>
+
+                </li>
+
+            </ul>
+
+
+            <div class="mt-auto p-3 rounded-xl bg-soft text-xs text-muted">
+                Paste a website URL on the left and press
+                <strong class="text-on-surface">Scan Website</strong>
+                to analyze its suspicious patterns.
+            </div>
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- Recent URL Scan History -->
+    <div class="bg-card rounded-2xl shadow-card p-5 sm:p-6 border border-line">
+
+        <div class="flex justify-between items-center mb-4">
+
+            <div>
+
+                <h3 class="text-lg font-bold">
+                    Recent URL Scan History
+                </h3>
+
+                <p class="text-xs text-muted mt-1">
+                    Your latest website scans
+                </p>
+
+            </div>
+
+            <a href="{% url 'url_scan_history' %}"
+                class="inline-flex items-center gap-1 text-sm font-bold text-emerald-600 dark:text-emerald-400 hover:underline">
+
+                View All
+
+                <span class="material-symbols-outlined text-lg">
+                    arrow_forward
+                </span>
+
+            </a>
+
+        </div>
+
+
+        <div class="overflow-x-auto">
+
+            <table class="w-full min-w-[650px] text-sm text-left">
+
+                <thead>
+
+                    <tr class="bg-soft text-muted text-xs uppercase tracking-wider">
+
+                        <th class="p-3">Website</th>
+                        <th class="p-3">Result</th>
+                        <th class="p-3">Risk Score</th>
+                        <th class="p-3">Date</th>
+                        <th class="p-3 text-right">Action</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody class="divide-y divide-line">
+
+                    {% for scan in recent_scans %}
+
+                    <tr class="hover:bg-soft/60 transition">
+
+                        <td class="p-3 max-w-xs">
+
+                            <span class="block truncate font-medium" title="{{ scan.url }}">
+                                {{ scan.domain }}
+                            </span>
+
+                        </td>
+
+
+                        <td class="p-3">
+
+                            <span class="px-2.5 py-1 rounded-full text-xs font-bold
+                                {% if scan.result == 'Low Risk' %}
+                                    bg-emerald-500/10 text-emerald-700 dark:text-emerald-300
+                                {% elif scan.result == 'Suspicious' %}
+                                    bg-amber-500/10 text-amber-700 dark:text-amber-300
+                                {% else %}
+                                    bg-red-500/10 text-red-700 dark:text-red-300
+                                {% endif %}">
+
+                                {{ scan.result }}
+
+                            </span>
+
+                        </td>
+
+
+                        <td class="p-3 font-semibold">
+                            {{ scan.risk_score }}/100
+                        </td>
+
+
+                        <td class="p-3 whitespace-nowrap text-xs text-muted">
+                            {{ scan.created_at|date:"d M Y, h:i A" }}
+                        </td>
+
+
+                        <td class="p-3 text-right">
+
+                            <a href="{% url 'url_scan_detail' scan.id %}"
+                                class="inline-flex items-center gap-1 h-8 px-3 rounded-lg bg-soft text-sm font-bold hover:bg-emerald-600 hover:text-white transition">
+
+                                View
+
+                                <span class="material-symbols-outlined text-base">
+                                    chevron_right
+                                </span>
+
+                            </a>
+
+                        </td>
+
+                    </tr>
+
+
+                    {% empty %}
+
+                    <tr>
+
+                        <td colspan="5" class="py-10 text-center">
+
+                            <span class="material-symbols-outlined text-4xl text-muted">
+                                history
+                            </span>
+
+                            <p class="text-sm font-semibold mt-2">
+                                No URL scans yet
+                            </p>
+
+                            <p class="text-xs text-muted mt-1">
+                                Your scanned websites will appear here.
+                            </p>
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const input = document.getElementById('urlInput');
+    const form = document.getElementById('urlScanForm');
+    const scanBtn = document.getElementById('urlScanBtn');
+
+    // Sample URLs
+    document.querySelectorAll('.url-sample').forEach(function (button) {
+
+        button.addEventListener('click', function () {
+
+            input.value = this.dataset.url;
+            input.focus();
+
+            document.getElementById('urlError').classList.add('hidden');
+
+        });
+
+    });
+
+
+    // Clear Button
+    document.getElementById('clearUrlBtn').addEventListener('click', function () {
+
+        input.value = '';
+
+        document.getElementById('urlError').classList.add('hidden');
+
+        input.focus();
+
+    });
+
+
+    // Form Validation
+    form.addEventListener('submit', function (event) {
+
+        if (!input.value.trim()) {
+
+            event.preventDefault();
+
+            document.getElementById('urlError').classList.remove('hidden');
+
+            input.focus();
+
+            return;
+
+        }
+
+        scanBtn.disabled = true;
+
+        document.getElementById('urlScanText').textContent = 'Scanning...';
+
+        document.getElementById('urlScanIcon').textContent = 'progress_activity';
+
+        document.getElementById('urlScanIcon').classList.add('animate-spin');
+
+    });
+
+
+    // Close and auto-dismiss alerts
+    document.querySelectorAll('.scanner-alert').forEach(function (alert) {
+
+        const close = function () {
+
+            alert.style.opacity = '0';
+
+            setTimeout(function () {
+                alert.remove();
+            }, 500);
+
+        };
+
+        const closeButton = alert.querySelector('.alert-close');
+
+        if (closeButton) {
+            closeButton.addEventListener('click', close);
+        }
+
+        setTimeout(close, 6000);
+
+    });
+
+});
+</script>
+
+{% endblock %}

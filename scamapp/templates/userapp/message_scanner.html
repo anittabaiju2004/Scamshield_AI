@@ -1,0 +1,650 @@
+
+{% extends 'userapp/user_dashboard.html' %}
+
+{% block content %}
+
+<section class="max-w-6xl mx-auto w-full p-4 sm:p-6 flex flex-col gap-6 text-gray-900 dark:text-gray-100">
+
+  <!-- ================= Header ================= -->
+  <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+        <span class="material-symbols-outlined text-[26px]">mark_chat_unread</span>
+      </div>
+      <div>
+        <h2 class="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">Message Scanner</h2>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
+          Analyze suspicious messages using our Machine Learning model.
+        </p>
+      </div>
+    </div>
+
+    <span class="inline-flex self-start sm:self-auto items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs font-bold">
+      <span class="relative flex h-2 w-2">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+        <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+      </span>
+      Model online
+    </span>
+  </div>
+
+  <!-- ================= Django Messages ================= -->
+  {% if messages %}
+  <div class="flex flex-col gap-2">
+    {% for message in messages %}
+    <div class="scanner-alert flex items-center gap-3 p-3.5 rounded-xl text-sm font-semibold transition-opacity duration-500
+      {% if message.tags == 'success' %}bg-emerald-500/10 text-emerald-700 dark:text-emerald-300
+      {% elif message.tags == 'warning' %}bg-amber-500/10 text-amber-700 dark:text-amber-300
+      {% elif message.tags == 'info' %}bg-sky-500/10 text-sky-700 dark:text-sky-300
+      {% else %}bg-red-500/10 text-red-700 dark:text-red-300{% endif %}" role="alert">
+
+      <span class="material-symbols-outlined text-[20px]">
+        {% if message.tags == 'success' %}check_circle
+        {% elif message.tags == 'warning' %}warning
+        {% elif message.tags == 'info' %}info
+        {% else %}error{% endif %}
+      </span>
+
+      <span class="flex-1">{{ message }}</span>
+
+      <button type="button"
+        class="alert-close w-7 h-7 rounded-lg flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10"
+        aria-label="Close">
+        <span class="material-symbols-outlined text-[18px]">close</span>
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+
+    <!-- ================= Scanner Form ================= -->
+    <div class="{% if prediction %}lg:col-span-2{% else %}lg:col-span-3{% endif %} bg-card rounded-2xl shadow-card p-5 sm:p-6 border border-line">
+
+      <form method="POST" id="scanForm" class="flex flex-col gap-4">
+        {% csrf_token %}
+
+        <div class="flex items-center justify-between">
+          <label for="messageInput" class="text-sm font-bold text-gray-900 dark:text-gray-100">
+            Enter your message
+          </label>
+
+          <span id="charCount" class="font-mono text-[11px] text-gray-500 dark:text-gray-400">
+            0 / 10,000
+          </span>
+        </div>
+
+        <!-- Quick Samples -->
+        <div class="flex flex-wrap items-center gap-1.5">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 mr-1">
+            Try a sample:
+          </span>
+
+          <button type="button"
+            class="sample-btn px-2.5 py-1 rounded-lg bg-soft text-gray-700 dark:text-gray-300 hover:bg-emerald-500/10 hover:text-emerald-700 dark:hover:text-emerald-300 text-xs font-semibold transition-colors"
+            data-sample="URGENT: Your bank account has been locked due to suspicious activity. Verify your details now at secure-bank-verify.info to avoid suspension.">
+            Bank phishing
+          </button>
+
+          <button type="button"
+            class="sample-btn px-2.5 py-1 rounded-lg bg-soft text-gray-700 dark:text-gray-300 hover:bg-emerald-500/10 hover:text-emerald-700 dark:hover:text-emerald-300 text-xs font-semibold transition-colors"
+            data-sample="Congratulations! You have won a FREE iPhone. Reply YES now and pay a small delivery fee to claim your prize!">
+            Prize offer
+          </button>
+
+          <button type="button"
+            class="sample-btn px-2.5 py-1 rounded-lg bg-soft text-gray-700 dark:text-gray-300 hover:bg-emerald-500/10 hover:text-emerald-700 dark:hover:text-emerald-300 text-xs font-semibold transition-colors"
+            data-sample="Hi, the team meeting has moved to 3 PM tomorrow in the main conference room. See you there.">
+            Normal message
+          </button>
+        </div>
+
+        <!-- Message Input -->
+        <textarea
+          id="messageInput"
+          name="message"
+          rows="7"
+          maxlength="10000"
+          required
+          placeholder="Paste the SMS, WhatsApp message or email text here..."
+          class="w-full p-4 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 text-sm leading-relaxed resize-y outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15 transition"
+        >{{ request.POST.message|default:'' }}</textarea>
+
+        <p id="emptyError"
+          class="hidden -mt-2 text-xs font-semibold text-red-600 dark:text-red-400 items-center gap-1">
+          <span class="material-symbols-outlined text-[14px]">error</span>
+          Please paste a message first.
+        </p>
+
+        <!-- Buttons -->
+        <div class="flex items-center gap-2">
+
+          <button type="button" id="clearBtn"
+            class="h-11 px-4 rounded-xl bg-soft text-gray-700 dark:text-gray-200 hover:bg-line text-sm font-semibold transition-colors">
+            Clear
+          </button>
+
+          <button type="submit" id="analyzeBtn"
+            class="flex-1 h-11 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-[0_4px_14px_rgba(16,185,129,0.3)] transition disabled:opacity-60 disabled:cursor-not-allowed">
+
+            <span class="material-symbols-outlined text-[18px]" id="analyzeIcon">auto_awesome</span>
+            <span id="analyzeText">Analyze Message</span>
+          </button>
+
+        </div>
+
+        <p class="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
+          <span class="material-symbols-outlined text-[14px]">lock</span>
+          Don't paste passwords or OTPs. Your scans are saved to your history.
+        </p>
+
+      </form>
+    </div>
+
+    <!-- ================= Result / Tips ================= -->
+    {% if prediction %}
+
+    <div class="lg:col-span-3 bg-card rounded-2xl shadow-card overflow-hidden border border-line" id="resultCard">
+
+      <!-- Verdict Banner -->
+      <div class="p-5 sm:p-6 flex items-center gap-4
+        {% if prediction.result == 'Legitimate' %}bg-emerald-500/10
+        {% elif prediction.result == 'Spam' %}bg-amber-500/10
+        {% else %}bg-red-500/10{% endif %}">
+
+        <div class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0
+          {% if prediction.result == 'Legitimate' %}bg-emerald-500 text-white
+          {% elif prediction.result == 'Spam' %}bg-amber-500 text-white
+          {% else %}bg-red-600 text-white{% endif %}">
+
+          <span class="material-symbols-outlined text-[30px]">
+            {% if prediction.result == 'Legitimate' %}verified_user
+            {% elif prediction.result == 'Spam' %}report
+            {% else %}gpp_bad{% endif %}
+          </span>
+        </div>
+
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">
+            Predicted Category
+          </p>
+
+          <h3 class="text-3xl font-extrabold tracking-tight
+            {% if prediction.result == 'Legitimate' %}text-emerald-600 dark:text-emerald-400
+            {% elif prediction.result == 'Spam' %}text-amber-600 dark:text-amber-400
+            {% else %}text-red-600 dark:text-red-400{% endif %}">
+            {{ prediction.result }}
+          </h3>
+        </div>
+
+        <!-- Confidence Ring -->
+        <div class="relative w-20 h-20 shrink-0" title="Prediction confidence">
+
+          <svg viewBox="0 0 36 36" class="w-20 h-20 -rotate-90">
+            <circle cx="18" cy="18" r="15.9" fill="none"
+              stroke-width="3.5"
+              class="stroke-gray-300 dark:stroke-white/10">
+            </circle>
+
+            <circle cx="18" cy="18" r="15.9" fill="none"
+              stroke-width="3.5"
+              stroke-linecap="round"
+              pathLength="100"
+              stroke-dasharray="{{ prediction.confidence|stringformat:'.1f' }} 100"
+              class="{% if prediction.result == 'Legitimate' %}stroke-emerald-500{% elif prediction.result == 'Spam' %}stroke-amber-500{% else %}stroke-red-600{% endif %}">
+            </circle>
+          </svg>
+
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <span class="text-lg font-extrabold leading-none text-gray-900 dark:text-white">
+              {{ prediction.confidence|stringformat:'.0f' }}%
+            </span>
+            <span class="text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-0.5">
+              Confidence
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="p-5 sm:p-6 flex flex-col gap-6">
+
+        <!-- Category Probabilities -->
+        <div>
+          <h4 class="text-sm font-bold mb-3 text-gray-900 dark:text-gray-100">
+            Category Probabilities
+          </h4>
+
+          <div class="flex flex-col gap-3">
+
+            {% for label, probability in prediction.probabilities.items %}
+            <div>
+
+              <div class="flex justify-between text-sm mb-1.5">
+
+                <span class="font-semibold flex items-center gap-2 text-gray-800 dark:text-gray-200">
+
+                  <span class="w-2.5 h-2.5 rounded-full
+                    {% if label == 'Legitimate' %}bg-emerald-500
+                    {% elif label == 'Spam' %}bg-amber-500
+                    {% else %}bg-red-600{% endif %}">
+                  </span>
+
+                  {{ label }}
+
+                  {% if label == prediction.result %}
+                  <span class="px-1.5 py-0.5 rounded bg-soft text-[10px] font-bold uppercase text-gray-600 dark:text-gray-300">
+                    Top
+                  </span>
+                  {% endif %}
+
+                </span>
+
+                <span class="font-mono font-semibold text-gray-800 dark:text-gray-200">
+                  {{ probability|stringformat:'.1f' }}%
+                </span>
+
+              </div>
+
+              <div class="w-full h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div
+                  class="prob-bar h-full rounded-full transition-[width] duration-700 ease-out
+                    {% if label == 'Legitimate' %}bg-emerald-500
+                    {% elif label == 'Spam' %}bg-amber-500
+                    {% else %}bg-red-600{% endif %}"
+                  style="width: 0%"
+                  data-width="{{ probability|stringformat:'.1f' }}">
+                </div>
+              </div>
+
+            </div>
+            {% endfor %}
+
+          </div>
+        </div>
+
+        <!-- What Should You Do -->
+        <div class="p-4 rounded-xl bg-soft">
+
+          <h4 class="text-sm font-bold mb-2 flex items-center gap-2 text-gray-900 dark:text-gray-100">
+            <span class="material-symbols-outlined text-[18px] text-emerald-600 dark:text-emerald-400">
+              tips_and_updates
+            </span>
+            What should you do?
+          </h4>
+
+          {% if prediction.result == 'Legitimate' %}
+
+          <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1.5 list-disc pl-5">
+            <li>This message looks safe, but stay careful with links and attachments.</li>
+            <li>Never share OTPs, PINs or passwords, even with known contacts.</li>
+          </ul>
+
+          {% elif prediction.result == 'Spam' %}
+
+          <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1.5 list-disc pl-5">
+            <li>Don't reply or click any links in this message.</li>
+            <li>Unsubscribe only through official websites, not links in the message.</li>
+            <li>Mark it as spam or block the sender.</li>
+          </ul>
+
+          {% else %}
+
+          <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1.5 list-disc pl-5">
+            <li>
+              <strong class="text-red-600 dark:text-red-400">Do not</strong>
+              click links, call numbers or reply to this message.
+            </li>
+            <li>Never share OTPs, card details, passwords or make any payment.</li>
+            <li>
+              Block the sender and report it at
+              <strong class="text-gray-900 dark:text-white">cybercrime.gov.in</strong>
+              or call <strong class="text-gray-900 dark:text-white">1930</strong>.
+            </li>
+            <li>If you already shared details, contact your bank immediately.</li>
+          </ul>
+
+          {% endif %}
+
+        </div>
+
+      </div>
+    </div>
+
+    {% else %}
+
+    <!-- ================= Tips Before First Scan ================= -->
+    <div class="lg:col-span-2 bg-card rounded-2xl shadow-card p-5 sm:p-6 flex flex-col gap-4 border border-line">
+
+      <h3 class="text-base font-bold flex items-center gap-2 text-gray-900 dark:text-gray-100">
+        <span class="material-symbols-outlined text-[20px] text-emerald-600 dark:text-emerald-400">
+          lightbulb
+        </span>
+        Common scam signs
+      </h3>
+
+      <ul class="flex flex-col gap-3 text-sm text-gray-700 dark:text-gray-300">
+
+        <li class="flex gap-3">
+          <span class="material-symbols-outlined text-[20px] text-amber-500 shrink-0">timer</span>
+          <span>
+            <strong class="text-gray-900 dark:text-white">Urgency</strong>
+            — "act now", "within 24 hours", "account will be blocked".
+          </span>
+        </li>
+
+        <li class="flex gap-3">
+          <span class="material-symbols-outlined text-[20px] text-amber-500 shrink-0">redeem</span>
+          <span>
+            <strong class="text-gray-900 dark:text-white">Too good to be true</strong>
+            — prizes, lotteries, easy money.
+          </span>
+        </li>
+
+        <li class="flex gap-3">
+          <span class="material-symbols-outlined text-[20px] text-amber-500 shrink-0">password</span>
+          <span>
+            <strong class="text-gray-900 dark:text-white">Asks for details</strong>
+            — OTP, PIN, password or card number.
+          </span>
+        </li>
+
+        <li class="flex gap-3">
+          <span class="material-symbols-outlined text-[20px] text-amber-500 shrink-0">link</span>
+          <span>
+            <strong class="text-gray-900 dark:text-white">Strange links</strong>
+            — misspelled names or endings like .xyz or .top.
+          </span>
+        </li>
+
+      </ul>
+
+      <div class="mt-1 p-3 rounded-xl bg-soft text-xs text-gray-600 dark:text-gray-400">
+        Paste a message on the left and press
+        <strong class="text-gray-900 dark:text-gray-100">Analyze Message</strong>
+        to see the result here.
+      </div>
+
+    </div>
+
+    {% endif %}
+
+  </div>
+
+  <!-- ================= Recent Scan History ================= -->
+  <div class="bg-card rounded-2xl shadow-card p-5 sm:p-6 border border-line">
+
+    <div class="flex justify-between items-center mb-4">
+
+      <div>
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+          Recent Scan History
+        </h3>
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          Your latest message scans
+        </p>
+      </div>
+
+      <a href="{% url 'scan_history' %}"
+        class="inline-flex items-center gap-1 text-sm font-bold text-emerald-600 dark:text-emerald-400 hover:underline">
+        View All
+        <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+      </a>
+
+    </div>
+
+    <div class="overflow-x-auto -mx-1 px-1">
+
+      <table class="w-full min-w-[640px] text-sm text-left text-gray-800 dark:text-gray-200">
+
+        <thead>
+          <tr class="bg-soft text-gray-600 dark:text-gray-400 text-[11px] uppercase tracking-wider">
+
+            <th class="py-3 px-4 rounded-l-xl font-bold">Message</th>
+            <th class="py-3 px-4 font-bold">Result</th>
+            <th class="py-3 px-4 font-bold">Confidence</th>
+            <th class="py-3 px-4 font-bold">Date</th>
+            <th class="py-3 px-4 rounded-r-xl font-bold text-right">Action</th>
+
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-line">
+
+          {% for scan in history %}
+
+          <tr class="hover:bg-soft/60 transition-colors">
+
+            <td class="py-3 px-4 max-w-[320px]">
+              <span class="block truncate text-gray-800 dark:text-gray-200"
+                title="{{ scan.message }}">
+                {{ scan.message|truncatechars:60 }}
+              </span>
+            </td>
+
+            <td class="py-3 px-4">
+
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap
+                {% if scan.result == 'Legitimate' %}bg-emerald-500/10 text-emerald-700 dark:text-emerald-300
+                {% elif scan.result == 'Spam' %}bg-amber-500/15 text-amber-700 dark:text-amber-300
+                {% else %}bg-red-500/10 text-red-700 dark:text-red-300{% endif %}">
+
+                <span class="w-1.5 h-1.5 rounded-full
+                  {% if scan.result == 'Legitimate' %}bg-emerald-500
+                  {% elif scan.result == 'Spam' %}bg-amber-500
+                  {% else %}bg-red-600{% endif %}">
+                </span>
+
+                {{ scan.result }}
+
+              </span>
+
+            </td>
+
+            <td class="py-3 px-4">
+
+              <div class="flex items-center gap-2">
+
+                <div class="w-16 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    class="h-full rounded-full
+                      {% if scan.result == 'Legitimate' %}bg-emerald-500
+                      {% elif scan.result == 'Spam' %}bg-amber-500
+                      {% else %}bg-red-600{% endif %}"
+                    style="width: {{ scan.confidence|stringformat:'.1f' }}%">
+                  </div>
+                </div>
+
+                <span class="font-mono text-xs font-semibold text-gray-800 dark:text-gray-200">
+                  {{ scan.confidence|stringformat:'.1f' }}%
+                </span>
+
+              </div>
+
+            </td>
+
+            <td class="py-3 px-4 whitespace-nowrap text-gray-500 dark:text-gray-400 text-xs">
+              {{ scan.created_at|date:"d M Y, h:i A" }}
+            </td>
+
+            <td class="py-3 px-4 text-right">
+
+              <a href="{% url 'scan_detail' scan.id %}"
+                class="inline-flex items-center gap-1 h-8 px-3 rounded-lg bg-soft text-gray-700 dark:text-gray-200 hover:bg-emerald-600 hover:text-white text-xs font-bold transition-colors">
+                View
+                <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+              </a>
+
+            </td>
+
+          </tr>
+
+          {% empty %}
+
+          <tr>
+            <td colspan="5" class="py-10 text-center">
+
+              <span class="material-symbols-outlined text-[36px] text-gray-400 dark:text-gray-500">
+                inbox
+              </span>
+
+              <p class="text-sm font-semibold mt-1 text-gray-800 dark:text-gray-200">
+                No scans yet
+              </p>
+
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Your scanned messages will appear here.
+              </p>
+
+            </td>
+          </tr>
+
+          {% endfor %}
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+</section>
+
+<!-- ================= JavaScript ================= -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+  const $ = (id) => document.getElementById(id);
+
+  const input = $('messageInput');
+
+  if (!input) return;
+
+  // Character Counter
+  const updateCount = () => {
+    $('charCount').textContent =
+      `${input.value.length.toLocaleString()} / 10,000`;
+  };
+
+  input.addEventListener('input', () => {
+    updateCount();
+    $('emptyError').classList.add('hidden');
+    $('emptyError').classList.remove('flex');
+  });
+
+  updateCount();
+
+  // Sample Buttons
+  document.querySelectorAll('.sample-btn').forEach(btn => {
+
+    btn.addEventListener('click', () => {
+
+      input.value = btn.dataset.sample;
+
+      updateCount();
+
+      $('emptyError').classList.add('hidden');
+      $('emptyError').classList.remove('flex');
+
+      input.focus();
+
+    });
+
+  });
+
+  // Clear Button
+  $('clearBtn').addEventListener('click', () => {
+
+    input.value = '';
+
+    updateCount();
+
+    $('emptyError').classList.add('hidden');
+    $('emptyError').classList.remove('flex');
+
+    input.focus();
+
+  });
+
+  // Form Submission
+  $('scanForm').addEventListener('submit', (e) => {
+
+    if (!input.value.trim()) {
+
+      e.preventDefault();
+
+      $('emptyError').classList.remove('hidden');
+      $('emptyError').classList.add('flex');
+
+      input.focus();
+
+      return;
+    }
+
+    $('analyzeBtn').disabled = true;
+
+    $('analyzeText').textContent = 'Analyzing…';
+
+    $('analyzeIcon').textContent = 'progress_activity';
+
+    $('analyzeIcon').classList.add('animate-spin');
+
+  });
+
+  // Animate Probability Bars
+  const bars = document.querySelectorAll('.prob-bar');
+
+  if (bars.length) {
+
+    requestAnimationFrame(() => {
+
+      bars.forEach(b => {
+
+        b.style.width = b.dataset.width + '%';
+
+      });
+
+    });
+
+    const card = $('resultCard');
+
+    if (card && window.innerWidth < 1024) {
+
+      card.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+
+    }
+
+  }
+
+  // Alerts: Close + Auto Dismiss
+  document.querySelectorAll('.scanner-alert').forEach(alert => {
+
+    const close = () => {
+
+      alert.style.opacity = '0';
+
+      setTimeout(() => alert.remove(), 500);
+
+    };
+
+    const closeButton = alert.querySelector('.alert-close');
+
+    if (closeButton) {
+
+      closeButton.addEventListener('click', close);
+
+    }
+
+    setTimeout(close, 6000);
+
+  });
+
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Login - ScamShield AI</title>
+
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
+
+<script>
+  // Apply saved / system theme before the page paints (same key as all other pages)
+  (function () {
+    var dark = false;
+    try {
+      var saved = localStorage.getItem('scamshield-theme');
+      dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } catch (e) {}
+    if (dark) document.documentElement.classList.add('dark');
+  })();
+</script>
+
+<style>
+  /* Theme colours — same values as the home page. Light first, then dark. */
+  :root {
+    --c-primary: 0 108 73; --c-on-primary: 255 255 255; --c-primary-container: 16 185 129;
+    --c-secondary-container: 189 233 222; --c-on-secondary-container: 66 106 98;
+    --c-surface: 243 251 248; --c-surface-container-lowest: 255 255 255; --c-surface-container-low: 237 245 242;
+    --c-surface-container: 231 240 236; --c-surface-container-high: 226 234 231;
+    --c-on-surface: 21 29 27; --c-on-surface-variant: 60 74 66; --c-outline: 187 202 191;
+    --c-error: 186 26 26; --c-error-container: 255 218 214; --c-on-error-container: 147 0 10;
+  }
+  .dark {
+    --c-primary: 78 222 163; --c-on-primary: 0 56 36; --c-primary-container: 16 185 129;
+    --c-secondary-container: 38 78 70; --c-on-secondary-container: 192 235 225;
+    --c-surface: 15 21 19; --c-surface-container-lowest: 10 15 13; --c-surface-container-low: 23 29 27;
+    --c-surface-container: 28 35 32; --c-surface-container-high: 38 45 42;
+    --c-on-surface: 222 228 225; --c-on-surface-variant: 187 202 191; --c-outline: 60 74 66;
+    --c-error: 255 180 171; --c-error-container: 147 0 10; --c-on-error-container: 255 218 214;
+  }
+  html, body { margin: 0; padding: 0; }
+  body { transition: background-color .2s, color .2s; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .auto-dismiss { animation: slideDown .4s ease-out; transition: opacity .5s, transform .5s; }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<!-- Tailwind: load ONCE, then set the config -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  const v = (n) => `rgb(var(--c-${n}) / <alpha-value>)`;
+  tailwind.config = {
+    darkMode: "class",
+    theme: { extend: {
+      colors: Object.fromEntries([
+        "primary", "on-primary", "primary-container",
+        "secondary-container", "on-secondary-container",
+        "surface", "surface-container-lowest", "surface-container-low", "surface-container", "surface-container-high",
+        "on-surface", "on-surface-variant", "outline",
+        "error", "error-container", "on-error-container"
+      ].map(n => [n, v(n)])),
+      fontFamily: { sans: ["Manrope", "sans-serif"] }
+    } }
+  };
+</script>
+</head>
+
+<body class="bg-surface font-sans text-on-surface antialiased min-h-screen flex flex-col">
+
+<!-- Navbar -->
+<header class="h-16 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.06)] relative z-10">
+  <div class="max-w-7xl mx-auto h-full px-4 sm:px-8 flex items-center justify-between">
+    <a href="{% url 'home' %}" class="flex items-center gap-2 group">
+      <div class="w-10 h-10 rounded-xl bg-primary text-on-primary flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+        <span class="material-symbols-outlined text-[24px]">verified_user</span>
+      </div>
+      <span class="text-xl font-bold tracking-tight">ScamShield <span class="text-primary">AI</span></span>
+    </a>
+
+    <div class="flex items-center gap-3">
+      <a href="{% url 'home' %}" class="hidden sm:inline-flex items-center gap-1 text-sm font-semibold text-on-surface-variant hover:text-on-surface transition-colors">
+        <span class="material-symbols-outlined text-[18px]">arrow_back</span> Back to Home
+      </a>
+      <button type="button" id="themeToggle" aria-label="Toggle dark mode"
+        class="w-9 h-9 rounded-full flex items-center justify-center bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors">
+        <span id="themeIcon" class="material-symbols-outlined text-[18px]">dark_mode</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Django Messages -->
+{% if messages %}
+<div class="max-w-md mx-auto w-full px-4 pt-6 flex flex-col gap-2 relative z-10">
+  {% for message in messages %}
+  <div class="auto-dismiss flex items-center gap-3 p-3.5 rounded-xl text-sm font-semibold
+    {% if message.tags == 'success' %}bg-primary-container/15 text-primary
+    {% elif message.tags == 'error' %}bg-error-container text-on-error-container
+    {% elif message.tags == 'warning' %}bg-amber-500/15 text-amber-800 dark:text-amber-300
+    {% else %}bg-sky-500/15 text-sky-800 dark:text-sky-300{% endif %}" role="alert">
+    <span class="material-symbols-outlined text-[20px]">{% if message.tags == 'success' %}check_circle{% elif message.tags == 'error' %}error{% elif message.tags == 'warning' %}warning{% else %}info{% endif %}</span>
+    <span class="flex-1">{{ message }}</span>
+    <button type="button" class="dismiss w-7 h-7 rounded-lg flex items-center justify-center hover:bg-on-surface/10" aria-label="Close">
+      <span class="material-symbols-outlined text-[18px]">close</span>
+    </button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Main -->
+<main class="flex-grow relative overflow-hidden flex items-center">
+  <div class="absolute top-0 left-1/4 w-96 h-96 bg-primary-container/10 rounded-full blur-3xl pointer-events-none"></div>
+  <div class="absolute bottom-0 right-10 w-[28rem] h-[28rem] bg-secondary-container/25 rounded-full blur-3xl pointer-events-none"></div>
+
+  <div class="relative w-full max-w-6xl mx-auto px-4 sm:px-8 py-10 lg:py-16 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+
+    <!-- Left content -->
+    <div class="hidden lg:flex flex-col gap-6">
+      <span class="inline-flex self-start items-center gap-2 px-3.5 py-1.5 rounded-full bg-secondary-container/60 text-on-secondary-container text-xs font-bold uppercase tracking-wider shadow-sm">
+        <span class="material-symbols-outlined text-[16px]">shield</span> Secure Sign-In
+      </span>
+      <h1 class="text-5xl leading-[3.5rem] font-extrabold tracking-tight">
+        Welcome back to <span class="text-primary-container">ScamShield</span>.
+      </h1>
+      <p class="text-lg text-on-surface-variant max-w-md">
+        Log in to scan suspicious messages and links, and review your past scan history.
+      </p>
+      <div class="flex flex-col gap-3 pt-2">
+        <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-lg bg-primary-container/20 text-primary flex items-center justify-center"><span class="material-symbols-outlined text-[18px]">forum</span></div><span class="text-sm font-semibold">Scam Message Detection</span></div>
+        <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-lg bg-primary-container/20 text-primary flex items-center justify-center"><span class="material-symbols-outlined text-[18px]">link_off</span></div><span class="text-sm font-semibold">Phishing URL Scanner</span></div>
+        <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-lg bg-primary-container/20 text-primary flex items-center justify-center"><span class="material-symbols-outlined text-[18px]">history</span></div><span class="text-sm font-semibold">Scan History Management</span></div>
+      </div>
+    </div>
+
+    <!-- Login card -->
+    <div class="w-full max-w-md mx-auto lg:ml-auto">
+      <div class="rounded-2xl bg-surface-container-lowest p-6 sm:p-8 shadow-[0_12px_36px_rgba(0,40,25,0.10)]">
+        <div class="flex flex-col items-center text-center gap-2 mb-6">
+          <div class="w-14 h-14 rounded-2xl bg-primary-container/20 text-primary flex items-center justify-center">
+            <span class="material-symbols-outlined text-[30px]">lock</span>
+          </div>
+          <h2 class="text-2xl font-bold tracking-tight">Login to your account</h2>
+          <p class="text-sm text-on-surface-variant">Enter your username 
+            
+            and password to continue.</p>
+        </div>
+
+        <form id="loginForm" action="{% url 'login' %}" method="post" class="flex flex-col gap-4">
+          {% csrf_token %}
+          {% if next %}<input type="hidden" name="next" value="{{ next }}"/>{% endif %}
+
+          <!-- Username -->
+          <div class="flex flex-col gap-1.5">
+            <label for="username" class="text-sm font-semibold">Username</label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-on-surface-variant pointer-events-none">person</span>
+              <input type="text" id="username" name="username" value="{{ username|default:'' }}"
+                placeholder="Enter your username or email" autocomplete="username" required autofocus
+                class="w-full h-12 pl-10 pr-3 rounded-xl bg-surface-container-low border border-outline text-on-surface placeholder:text-on-surface-variant/60 outline-none focus:border-primary focus:ring-4 focus:ring-primary/15 transition"/>
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="flex flex-col gap-1.5">
+            <label for="password" class="text-sm font-semibold">Password</label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-on-surface-variant pointer-events-none">key</span>
+              <input type="password" id="password" name="password" placeholder="Enter your password"
+                autocomplete="current-password" required
+                class="w-full h-12 pl-10 pr-12 rounded-xl bg-surface-container-low border border-outline text-on-surface placeholder:text-on-surface-variant/60 outline-none focus:border-primary focus:ring-4 focus:ring-primary/15 transition"/>
+              <button type="button" id="togglePwd" aria-label="Show password"
+                class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition">
+                <span id="pwdIcon" class="material-symbols-outlined text-[20px]">visibility</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Remember me -->
+          <label class="flex items-center gap-2 text-sm text-on-surface-variant cursor-pointer select-none">
+            <input type="checkbox" name="remember" {% if remember %}checked{% endif %} class="w-4 h-4 rounded accent-[rgb(var(--c-primary))]"/>
+            Remember me
+          </label>
+
+          <!-- Submit -->
+          <button type="submit" id="submitBtn"
+            class="group mt-1 h-12 inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-on-primary font-semibold shadow-[0_4px_16px_rgba(0,108,73,0.25)] hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed">
+            <span id="submitText">Login</span>
+            <span id="submitIcon" class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+          </button>
+        </form>
+
+        <p class="mt-6 text-center text-sm text-on-surface-variant">
+          Don't have an account?
+          <a href="{% url 'register' %}" class="font-semibold text-primary hover:underline">Register now</a>
+        </p>
+      </div>
+
+      <p class="mt-4 flex items-center justify-center gap-1.5 text-xs text-on-surface-variant">
+        <span class="material-symbols-outlined text-[14px] text-primary">lock</span>
+        Your details are protected.
+      </p>
+    </div>
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="py-5 text-center text-xs text-on-surface-variant">
+  © 2026 ScamShield AI. All rights reserved.
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const $ = (id) => document.getElementById(id);
+
+  // ---- Dark / light theme ----
+  const root = document.documentElement;
+  const syncThemeIcon = () => {
+    const isDark = root.classList.contains('dark');
+    $('themeIcon').textContent = isDark ? 'light_mode' : 'dark_mode';
+    $('themeToggle').title = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+  };
+  syncThemeIcon();
+  $('themeToggle').addEventListener('click', () => {
+    const isDark = root.classList.toggle('dark');
+    try { localStorage.setItem('scamshield-theme', isDark ? 'dark' : 'light'); } catch (e) {}
+    syncThemeIcon();
+  });
+
+  // ---- Show / hide password ----
+  $('togglePwd').addEventListener('click', () => {
+    const show = $('password').type === 'password';
+    $('password').type = show ? 'text' : 'password';
+    $('pwdIcon').textContent = show ? 'visibility_off' : 'visibility';
+    $('togglePwd').setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+  });
+
+  // If the page came back after a failed login, jump to the password box
+  if ($('username').value) $('password').focus();
+
+  // ---- Loading state (form still posts to Django) ----
+  $('loginForm').addEventListener('submit', (e) => {
+    if (!$('username').value.trim() || !$('password').value) { e.preventDefault(); return; }
+    $('submitBtn').disabled = true;
+    $('submitText').textContent = 'Logging in…';
+    $('submitIcon').textContent = 'progress_activity';
+    $('submitIcon').classList.add('animate-spin');
+  });
+
+  // ---- Messages: close button + auto-dismiss after 5s ----
+  document.querySelectorAll('.auto-dismiss').forEach(alert => {
+    const close = () => {
+      alert.style.opacity = '0';
+      alert.style.transform = 'translateY(-6px)';
+      setTimeout(() => alert.remove(), 500);
+    };
+    alert.querySelector('.dismiss').addEventListener('click', close);
+    setTimeout(close, 5000);
+  });
+});
+</script>
+</body>
+</html>

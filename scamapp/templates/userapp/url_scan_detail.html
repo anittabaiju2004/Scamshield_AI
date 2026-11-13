@@ -1,0 +1,375 @@
+
+{% extends 'userapp/user_dashboard.html' %}
+
+{% block content %}
+
+<div class="max-w-6xl mx-auto space-y-6">
+
+    <!-- Page Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+        <div>
+            <div class="flex items-center gap-2 text-sm text-muted mb-2">
+                <a href="{% url 'url_scan_history' %}" class="hover:text-primary">
+                    URL Scan History
+                </a>
+                <span class="material-symbols-outlined text-base">chevron_right</span>
+                <span>Scan Details</span>
+            </div>
+
+            <h1 class="text-2xl font-bold text-on-surface">
+                URL Scan Report
+            </h1>
+
+            <p class="text-sm text-muted mt-1">
+                Detailed analysis of your scanned URL.
+            </p>
+        </div>
+
+        <a href="{% url 'url_scan_history' %}"
+           class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-line text-on-surface hover:bg-soft transition">
+            <span class="material-symbols-outlined text-lg">arrow_back</span>
+            Back to History
+        </a>
+
+    </div>
+
+    <!-- Result Overview -->
+    <div class="bg-card border border-line rounded-2xl shadow-card overflow-hidden">
+
+        <div class="p-6 sm:p-8">
+
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+
+                <div class="flex items-center gap-4">
+
+                    <div class="w-14 h-14 rounded-2xl flex items-center justify-center
+                        {% if scan.result == 'High Risk' %}
+                            bg-red-500/10 text-red-500
+                        {% elif scan.result == 'Suspicious' %}
+                            bg-amber-500/10 text-amber-500
+                        {% else %}
+                            bg-emerald-500/10 text-emerald-500
+                        {% endif %}">
+
+                        <span class="material-symbols-outlined text-3xl">
+                            {% if scan.result == 'High Risk' %}
+                                dangerous
+                            {% elif scan.result == 'Suspicious' %}
+                                warning
+                            {% else %}
+                                verified_user
+                            {% endif %}
+                        </span>
+
+                    </div>
+
+                    <div>
+                        <p class="text-sm text-muted">Scan Result</p>
+
+                        <h2 class="text-2xl font-bold mt-1
+                            {% if scan.result == 'High Risk' %}
+                                text-red-500
+                            {% elif scan.result == 'Suspicious' %}
+                                text-amber-500
+                            {% else %}
+                                text-emerald-500
+                            {% endif %}">
+                            {{ scan.result }}
+                        </h2>
+
+                        <p class="text-xs text-muted mt-1">
+                            Scan ID: URL-{{ scan.id|stringformat:"04d" }}
+                        </p>
+                    </div>
+
+                </div>
+
+                <!-- Risk Score -->
+                <div class="text-center sm:text-right">
+
+                    <p class="text-sm text-muted mb-1">Risk Score</p>
+
+                    <div class="flex items-baseline gap-1 sm:justify-end">
+                        <span class="text-4xl font-bold
+                            {% if scan.risk_score >= 50 %}
+                                text-red-500
+                            {% elif scan.risk_score >= 20 %}
+                                text-amber-500
+                            {% else %}
+                                text-emerald-500
+                            {% endif %}">
+                            {{ scan.risk_score }}
+                        </span>
+                        <span class="text-lg text-muted">/ 100</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Risk Progress -->
+            <div class="mt-8">
+
+                <div class="flex justify-between text-xs text-muted mb-2">
+                    <span>Risk Level</span>
+                    <span>{{ scan.risk_score }}%</span>
+                </div>
+
+                <div class="w-full h-3 bg-soft rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-500
+                        {% if scan.risk_score >= 50 %}
+                            bg-red-500
+                        {% elif scan.risk_score >= 20 %}
+                            bg-amber-500
+                        {% else %}
+                            bg-emerald-500
+                        {% endif %}"
+                        style="width: {{ scan.risk_score }}%">
+                    </div>
+                </div>
+
+                <div class="flex justify-between text-xs text-muted mt-2">
+                    <span>0 - Low Risk</span>
+                    <span>20 - Suspicious</span>
+                    <span>50 - High Risk</span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- URL Information -->
+    <div class="bg-card border border-line rounded-2xl shadow-card p-6">
+
+        <div class="flex items-center gap-2 mb-5">
+            <span class="material-symbols-outlined text-primary">link</span>
+            <h2 class="text-lg font-bold text-on-surface">
+                URL Information
+            </h2>
+        </div>
+
+        <div class="space-y-5">
+
+            <div>
+                <p class="text-xs font-semibold text-muted uppercase tracking-wider mb-2">
+                    Scanned URL
+                </p>
+
+                <div class="flex items-start gap-3 p-4 rounded-xl bg-soft border border-line">
+                    <span class="material-symbols-outlined text-muted mt-0.5">
+                        language
+                    </span>
+
+                    <p class="text-sm text-on-surface break-all font-medium">
+                        {{ scan.url }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+                <div>
+                    <p class="text-xs font-semibold text-muted uppercase tracking-wider mb-2">
+                        Domain
+                    </p>
+
+                    <p class="text-sm text-on-surface font-medium">
+                        {{ scan.domain }}
+                    </p>
+                </div>
+
+                <div>
+                    <p class="text-xs font-semibold text-muted uppercase tracking-wider mb-2">
+                        Scan Date & Time
+                    </p>
+
+                    <p class="text-sm text-on-surface font-medium">
+                        {{ scan.created_at|date:"d M Y, h:i A" }}
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Detected Risk Factors -->
+    <div class="bg-card border border-line rounded-2xl shadow-card overflow-hidden">
+
+        <div class="p-6 border-b border-line">
+
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-amber-500 text-2xl">
+                    policy
+                </span>
+
+                <div>
+                    <h2 class="text-lg font-bold text-on-surface">
+                        Detected Risk Factors
+                    </h2>
+
+                    <p class="text-sm text-muted mt-1">
+                        Rules that contributed to the calculated risk score.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="p-6">
+
+            {% if scan.reasons %}
+
+                <div class="space-y-3">
+
+                    {% for item in scan.reasons %}
+
+                    <div class="flex items-start gap-3 p-4 rounded-xl bg-soft border border-line">
+
+                        <div class="w-9 h-9 rounded-lg flex items-center justify-center bg-amber-500/10 text-amber-500 shrink-0">
+                            <span class="material-symbols-outlined">
+                                warning
+                            </span>
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-on-surface">
+                                {{ item.reason }}
+                            </p>
+
+                            <p class="text-xs text-muted mt-1">
+                                Risk contribution: +{{ item.points }} points
+                            </p>
+                        </div>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            {% else %}
+
+                <div class="text-center py-10">
+
+                    <span class="material-symbols-outlined text-5xl text-emerald-500">
+                        verified
+                    </span>
+
+                    <h3 class="text-base font-semibold text-on-surface mt-3">
+                        No Risk Factors Detected
+                    </h3>
+
+                    <p class="text-sm text-muted mt-1">
+                        The configured URL checks did not identify any suspicious indicators.
+                    </p>
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <!-- Recommendations -->
+    <div class="bg-card border border-line rounded-2xl shadow-card p-6">
+
+        <div class="flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-primary">
+                lightbulb
+            </span>
+
+            <h2 class="text-lg font-bold text-on-surface">
+                Security Recommendations
+            </h2>
+        </div>
+
+        {% if scan.result == 'High Risk' %}
+
+            <div class="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+                <p class="text-sm font-semibold text-red-500 mb-2">
+                    High Risk URL Detected
+                </p>
+
+                <ul class="text-sm text-on-surface space-y-2 list-disc pl-5">
+                    <li>Avoid opening this website.</li>
+                    <li>Do not enter passwords, banking details, or personal information.</li>
+                    <li>Do not download files from this website.</li>
+                    <li>Verify the website through its official domain.</li>
+                </ul>
+            </div>
+
+        {% elif scan.result == 'Suspicious' %}
+
+            <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                <p class="text-sm font-semibold text-amber-500 mb-2">
+                    Suspicious URL Detected
+                </p>
+
+                <ul class="text-sm text-on-surface space-y-2 list-disc pl-5">
+                    <li>Verify the domain name carefully.</li>
+                    <li>Check whether the URL belongs to the official website.</li>
+                    <li>Avoid sharing sensitive information until verified.</li>
+                    <li>Be cautious of shortened or unfamiliar links.</li>
+                </ul>
+            </div>
+
+        {% else %}
+
+            <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                <p class="text-sm font-semibold text-emerald-500 mb-2">
+                    Low Risk Indicators
+                </p>
+
+                <ul class="text-sm text-on-surface space-y-2 list-disc pl-5">
+                    <li>No major suspicious indicators were detected by the configured checks.</li>
+                    <li>Verify the website address before entering personal information.</li>
+                    <li>Always use trusted and official websites for payments and banking.</li>
+                </ul>
+            </div>
+
+        {% endif %}
+
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="flex items-start gap-3 p-4 rounded-xl bg-soft border border-line">
+
+        <span class="material-symbols-outlined text-muted">
+            info
+        </span>
+
+        <p class="text-xs text-muted leading-relaxed">
+            This report uses rule-based URL analysis. The risk score is not an
+            ML confidence score and does not guarantee whether a website is
+            safe or malicious. A Low Risk result does not guarantee safety.
+            Always verify unfamiliar websites independently.
+        </p>
+
+    </div>
+
+    <!-- Bottom Actions -->
+    <div class="flex flex-col sm:flex-row gap-3">
+
+        <a href="{% url 'url_scanner' %}"
+           class="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-white font-semibold hover:opacity-90 transition">
+            <span class="material-symbols-outlined">travel_explore</span>
+            Scan Another URL
+        </a>
+
+        <a href="{% url 'url_scan_history' %}"
+           class="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-line text-on-surface hover:bg-soft transition">
+            <span class="material-symbols-outlined">history</span>
+            View Scan History
+        </a>
+
+    </div>
+
+</div>
+
+{% endblock %}

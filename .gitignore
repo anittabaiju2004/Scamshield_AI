@@ -1,0 +1,25 @@
+# Environment & Secrets
+.env
+.env.local
+*.pem
+*.key
+
+# Dependencies
+node_modules/
+venv/
+env/
+.env/
+scamvenv/
+.venv/
+vendor/
+
+# Build & Logs
+dist/
+build/
+*.log
+
+# OS & Editor Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

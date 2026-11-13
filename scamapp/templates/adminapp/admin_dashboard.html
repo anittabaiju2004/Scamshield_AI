@@ -1,0 +1,1919 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Admin Dashboard - ScamShield AI</title>
+  <link href="https://fonts.googleapis.com" rel="preconnect" />
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&family=Manrope:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+    rel="stylesheet" />
+  <script>
+    (function () {
+      var dark = false;
+      try {
+        var saved = localStorage.getItem('scamshield-theme');
+        dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      } catch (e) { }
+      if (dark) document.documentElement.classList.add('dark');
+    })();
+  </script>
+  <style>
+    :root {
+      --c-forest: 18 60 53;
+      /* #123C35 */
+      --c-emerald: 16 185 129;
+      /* #10B981 */
+      --c-emerald-ink: 4 120 87;
+      /* readable emerald text on light */
+      --c-mint: 209 250 229;
+      /* #D1FAE5 */
+      --c-bg: 245 247 244;
+      /* #F5F7F4 */
+      --c-card: 255 255 255;
+      /* #FFFFFF */
+      --c-ink: 37 45 43;
+      /* #252D2B */
+      --c-muted: 113 128 120;
+      /* #718078 */
+      --c-soft: 238 242 238;
+      /* subtle fills */
+      --c-line: 226 232 228;
+      /* borders */
+      --c-amber: 245 158 11;
+      /* #F59E0B */
+      --c-red: 220 38 38;
+      /* #DC2626 */
+    }
+
+    .dark {
+      --c-forest: 18 60 53;
+      --c-emerald: 16 185 129;
+      --c-emerald-ink: 110 231 183;
+      --c-mint: 20 56 45;
+      --c-bg: 12 18 16;
+      --c-card: 20 28 25;
+      --c-ink: 230 237 234;
+      --c-muted: 150 166 158;
+      --c-soft: 29 39 35;
+      --c-line: 38 50 45;
+      --c-amber: 251 191 36;
+      --c-red: 248 113 113;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      transition: background-color .2s, color .2s;
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    .nav-link.is-active {
+      background: rgb(var(--c-mint));
+      color: rgb(var(--c-emerald-ink));
+      font-weight: 700;
+    }
+
+    .mobile-link.is-active {
+      background: rgb(var(--c-mint));
+      color: rgb(var(--c-emerald-ink));
+    }
+
+    .scroll-x::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .scroll-x::-webkit-scrollbar-thumb {
+      background: rgb(var(--c-line));
+      border-radius: 9999px;
+    }
+  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    const v = (n) => `rgb(var(--c-${n}) / <alpha-value>)`;
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: Object.fromEntries(["forest", "emerald", "emerald-ink", "mint", "bg", "card", "ink", "muted", "soft", "line", "amber", "red"].map(n => [n === "amber" ? "risk-med" : n === "red" ? "risk-high" : n, v(n)])),
+          fontFamily: { sans: ["Manrope", "sans-serif"], mono: ["JetBrains Mono", "monospace"] },
+          boxShadow: { card: "0 1px 2px rgba(18,60,53,0.04), 0 4px 16px rgba(18,60,53,0.06)" }
+        }
+      }
+    };
+  </script>
+</head>
+
+<body class="bg-bg font-sans text-ink antialiased min-h-screen flex flex-col">
+
+  <!-- ================= NAVBAR ================= -->
+  <header class="sticky top-0 z-50 bg-card/90 backdrop-blur-xl border-b border-line">
+    <div class="max-w-[1440px] mx-auto h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3 shrink-0">
+        <button id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu" type="button"
+          class="xl:hidden w-10 h-10 rounded-lg flex items-center justify-center text-muted hover:bg-soft hover:text-ink transition-colors">
+          <span class="material-symbols-outlined" id="menuIcon">menu</span>
+        </button>
+        <a href="{% url 'admin_dashboard' %}" class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-xl bg-forest flex items-center justify-center text-[#6EE7B7] shadow-sm">
+            <span class="material-symbols-outlined text-[22px]">shield_lock</span>
+          </div>
+          <div class="flex flex-col leading-tight">
+            <span class="text-lg font-bold tracking-tight">ScamShield <span class="text-emerald">AI</span></span>
+            <span class="text-[11px] font-bold uppercase tracking-widest text-muted">Admin Panel</span>
+          </div>
+        </a>
+      </div>
+
+      <nav class="hidden xl:flex items-center gap-1 p-1 rounded-xl bg-soft" aria-label="Admin">
+        <a href="{% url 'admin_dashboard' %}"
+          class="px-3.5 py-1.5 rounded-lg text-sm font-semibold text-muted hover:text-ink hover:bg-card transition-all">Home</a>
+        <a href="{% url 'admin_dashboard' %}" data-section="dashboard"
+          class="nav-link px-3.5 py-1.5 rounded-lg text-sm font-semibold text-muted hover:text-ink transition-all">Dashboard</a>
+        <a href="{% url 'user_management' %}" data-section="users"
+          class="nav-link px-3.5 py-1.5 rounded-lg text-sm font-semibold text-muted hover:text-ink transition-all">Registered
+          Users</a>
+        <a href="{% url 'admin_message_scans' %}" data-section="scans"
+          class="nav-link px-3.5 py-1.5 rounded-lg text-sm font-semibold text-muted hover:text-ink transition-all">Message
+          Scans</a>
+        <a href="{% url 'admin_detected_scams' %}" data-section="scams"
+          class="nav-link px-3.5 py-1.5 rounded-lg text-sm font-semibold text-muted hover:text-ink transition-all">Detected
+          Scams</a>
+        <a href="{% url 'admin_risk_analysis' %}" data-section="risk"
+          class="nav-link px-3.5 py-1.5 rounded-lg text-sm font-semibold text-muted hover:text-ink transition-all">Risk
+          Analysis</a>
+      </nav>
+
+      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <button id="themeToggle" aria-label="Toggle dark mode" type="button"
+          class="w-10 h-10 rounded-lg flex items-center justify-center text-muted hover:bg-soft hover:text-ink transition-colors">
+          <span class="material-symbols-outlined text-[20px]" id="themeIcon">dark_mode</span>
+        </button>
+
+        <!-- Notifications -->
+        <!-- <div class="relative">
+        <button id="notifBtn" aria-label="Notifications" aria-expanded="false" type="button" class="relative w-10 h-10 rounded-lg flex items-center justify-center text-muted hover:bg-soft hover:text-ink transition-colors">
+          <span class="material-symbols-outlined text-[20px]">notifications</span>
+          <span id="notifDot" class="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-risk-high text-white text-[10px] font-bold flex items-center justify-center">3</span>
+        </button>
+        <div id="notifMenu" class="hidden absolute right-0 mt-2 w-80 rounded-xl bg-card border border-line shadow-card overflow-hidden">
+          <div class="px-4 py-3 flex items-center justify-between border-b border-line">
+            <span class="font-bold text-sm">Notifications</span>
+            <button id="markRead" type="button" class="text-xs font-semibold text-emerald-ink hover:underline">Mark all read</button>
+          </div>
+          <ul class="divide-y divide-line text-sm">
+            <li class="px-4 py-3 flex gap-3"><span class="material-symbols-outlined text-risk-high text-[20px]">warning</span><div><p class="font-semibold">Spike in bank phishing</p><p class="text-xs text-muted">42 high-risk scans in the last hour</p></div></li>
+            <li class="px-4 py-3 flex gap-3"><span class="material-symbols-outlined text-emerald text-[20px]">person_add</span><div><p class="font-semibold">18 new users registered</p><p class="text-xs text-muted">Today</p></div></li>
+            <li class="px-4 py-3 flex gap-3"><span class="material-symbols-outlined text-risk-med text-[20px]">model_training</span><div><p class="font-semibold">Model retraining scheduled</p><p class="text-xs text-muted">Tonight at 02:00</p></div></li>
+          </ul>
+        </div>
+      </div> -->
+
+        <!-- Profile -->
+        <div class="relative">
+          <button id="profileBtn" aria-haspopup="true" aria-expanded="false" type="button"
+            class="flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg hover:bg-soft transition-colors">
+            <div
+              class="w-8 h-8 rounded-full bg-forest text-[#6EE7B7] flex items-center justify-center text-xs font-extrabold">
+              {{ request.user.username|first|upper }}
+            </div>
+
+            <span class="hidden md:block text-sm font-semibold">
+              {{ request.user.username }}
+            </span>
+
+            <span class="material-symbols-outlined text-[18px] text-muted hidden md:block">
+              expand_more
+            </span>
+          </button>
+
+          <div id="profileMenu"
+            class="hidden absolute right-0 mt-2 w-56 rounded-xl bg-card border border-line shadow-card p-1.5 z-50"
+            role="menu">
+            <div class="px-3 py-2 border-b border-line mb-1">
+              <p class="text-sm font-bold">
+                {{ request.user.full_name|default:request.user.username }}
+              </p>
+              <p class="text-xs text-muted">
+                {{ request.user.email }}
+              </p>
+            </div>
+
+            <a href="{% url 'user_management' %}"
+              class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-soft" role="menuitem">
+              <span class="material-symbols-outlined text-[18px]">group</span>
+              Users
+            </a>
+
+            <a href="" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-soft" role="menuitem">
+              <span class="material-symbols-outlined text-[18px]">monitoring</span>
+              Reports
+            </a>
+
+            <a href="{% url 'admin_dashboard' %}"
+              class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-soft" role="menuitem">
+              <span class="material-symbols-outlined text-[18px]">home</span>
+              View Dashboard
+            </a>
+          </div>
+        </div>
+
+        <a href="{% url 'logout' %}"
+          class="hidden sm:inline-flex items-center gap-1.5 h-10 px-3.5 rounded-lg bg-risk-high/10 text-risk-high text-sm font-bold hover:bg-risk-high hover:text-white transition-colors">
+          <span class="material-symbols-outlined text-[18px]">logout</span>Logout
+        </a>
+      </div>
+    </div>
+
+    <!-- Mobile menu -->
+    <div id="mobileMenu" class="xl:hidden hidden border-t border-line bg-card">
+      <nav class="max-w-[1440px] mx-auto px-4 py-3 grid gap-1" aria-label="Admin mobile">
+        <a href="{% url 'admin_dashboard' %}" class="px-3 py-2.5 rounded-lg text-sm font-semibold">Home</a>
+        <a href="{% url 'admin_dashboard' %}" data-section="dashboard"
+          class="mobile-link px-3 py-2.5 rounded-lg text-sm font-semibold">Dashboard</a>
+        <a href="{% url 'user_management' %}" data-section="users"
+          class="mobile-link px-3 py-2.5 rounded-lg text-sm font-semibold">Registered Users</a>
+        <a href="{% url 'admin_message_scans' %}" data-section="scans"
+          class="mobile-link px-3 py-2.5 rounded-lg text-sm font-semibold">Message Scans</a>
+        <a href="{% url 'admin_detected_scams' %}" data-section="scams"
+          class="mobile-link px-3 py-2.5 rounded-lg text-sm font-semibold">Detected Scams</a>
+        <a href="{% url 'admin_risk_analysis' %}" data-section="risk"
+          class="mobile-link px-3 py-2.5 rounded-lg text-sm font-semibold">Risk Analysis</a>
+        <a href="{% url 'logout' %}"
+          class="sm:hidden mt-1 px-3 py-2.5 rounded-lg text-sm font-bold text-risk-high bg-risk-high/10 flex items-center gap-2"><span
+            class="material-symbols-outlined text-[18px]">logout</span>Logout</a>
+      </nav>
+    </div>
+  </header>
+  {% if messages %}
+  <div class="max-w-xl mx-auto w-full px-4 pt-6 flex flex-col gap-3 relative z-50">
+    {% for message in messages %}
+
+    <div class="auto-dismiss flex items-center gap-3 p-4 rounded-2xl border shadow-lg
+        transition-all duration-500 ease-in-out animate-[slideDown_0.4s_ease-out]
+        {% if message.tags == 'success' %}
+            bg-emerald-50 border-emerald-200 text-emerald-800
+        {% elif message.tags == 'error' %}
+            bg-red-50 border-red-200 text-red-800
+        {% elif message.tags == 'warning' %}
+            bg-amber-50 border-amber-200 text-amber-800
+        {% elif message.tags == 'info' %}
+            bg-blue-50 border-blue-200 text-blue-800
+        {% else %}
+            bg-gray-50 border-gray-200 text-gray-800
+        {% endif %}" role="alert">
+
+      <!-- Icon -->
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0
+            {% if message.tags == 'success' %}bg-emerald-100 text-emerald-600
+            {% elif message.tags == 'error' %}bg-red-100 text-red-600
+            {% elif message.tags == 'warning' %}bg-amber-100 text-amber-600
+            {% elif message.tags == 'info' %}bg-blue-100 text-blue-600
+            {% else %}bg-gray-100 text-gray-600{% endif %}">
+
+        <span class="material-symbols-outlined text-[22px]">
+          {% if message.tags == 'success' %}check_circle
+          {% elif message.tags == 'error' %}error
+          {% elif message.tags == 'warning' %}warning
+          {% elif message.tags == 'info' %}info
+          {% else %}notifications{% endif %}
+        </span>
+      </div>
+
+      <!-- Message -->
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-bold">
+          {% if message.tags == 'success' %}Success
+          {% elif message.tags == 'error' %}Error
+          {% elif message.tags == 'warning' %}Warning
+          {% elif message.tags == 'info' %}Information
+          {% else %}Notification{% endif %}
+        </p>
+
+        <p class="text-sm font-medium opacity-90 mt-0.5">
+          {{ message }}
+        </p>
+      </div>
+
+      <!-- Close Button -->
+      <button type="button"
+        class="dismiss w-8 h-8 rounded-lg flex items-center justify-center hover:bg-black/5 transition shrink-0"
+        aria-label="Close">
+        <span class="material-symbols-outlined text-[20px]">close</span>
+      </button>
+
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% block content%}
+
+  <main class="flex-grow w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-10">
+
+    {{ users_data|json_script:"users-data" }}
+
+    <!-- ================= DASHBOARD OVERVIEW ================= -->
+    <section id="dashboard" class="scroll-mt-24 flex flex-col gap-6">
+      <div class="relative overflow-hidden rounded-2xl bg-forest text-white p-6 sm:p-8 shadow-card">
+        <div class="absolute -top-20 -right-16 w-72 h-72 rounded-full bg-emerald/25 blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 left-1/3 w-72 h-72 rounded-full bg-emerald/10 blur-3xl pointer-events-none">
+        </div>
+        <div class="relative flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div>
+            <div class="flex flex-wrap items-center gap-2 mb-3">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-xs font-semibold">
+                <span class="material-symbols-outlined text-[14px]">calendar_today</span><span
+                  id="todayDate">Today</span>
+              </span>
+              <span
+                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald/20 text-[#A7F3D0] text-xs font-bold">
+                <span class="relative flex h-2 w-2"><span
+                    class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald opacity-75"></span><span
+                    class="relative inline-flex h-2 w-2 rounded-full bg-emerald"></span></span>
+                System Active
+              </span>
+            </div>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Welcome Back, Admin!</h1>
+            <p class="mt-2 text-white/75 max-w-xl">Monitor platform activity and keep track of scam detection
+              performance.</p>
+          </div>
+          <div class="grid grid-cols-3 gap-3 text-center">
+            <div class="px-4 py-3 rounded-xl bg-white/10">
+              <p class="text-[11px] uppercase tracking-wider text-white/60 font-bold">Model</p>
+              <p class="font-bold mt-0.5">v4.8.2</p>
+            </div>
+            <div class="px-4 py-3 rounded-xl bg-white/10">
+              <p class="text-[11px] uppercase tracking-wider text-white/60 font-bold">Uptime</p>
+              <p class="font-bold mt-0.5">99.9%</p>
+            </div>
+            <div class="px-4 py-3 rounded-xl bg-white/10">
+              <p class="text-[11px] uppercase tracking-wider text-white/60 font-bold">Avg Scan</p>
+              <p class="font-bold mt-0.5">0.8s</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-risk-med/10 text-sm">
+    <span class="material-symbols-outlined text-risk-med text-[20px]">info</span>
+    <span><strong>Partly sample data:</strong> Registered Users are live from the database. Scan numbers, charts and the scans table are placeholders until a Scan model is added.</span>
+  </div>   -->
+
+      <!-- Stat cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div
+          class="p-5 rounded-2xl bg-card shadow-card flex flex-col gap-4 hover:-translate-y-0.5 transition-transform">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold text-muted">Total Registered Users</span>
+            <div class="w-11 h-11 rounded-xl bg-mint text-emerald-ink flex items-center justify-center"><span
+                class="material-symbols-outlined">group</span></div>
+          </div>
+          <p class="text-4xl font-extrabold tracking-tight">{{ total_users }}</p>
+          <div class="flex items-center gap-1.5 text-xs font-bold text-emerald-ink"><span
+              class="material-symbols-outlined text-[16px]">database</span>Live from database</div>
+        </div>
+
+        <!-- TOTAL MESSAGE SCANS -->
+        <div
+          class="p-5 rounded-2xl bg-card shadow-card flex flex-col gap-4 hover:-translate-y-0.5 transition-transform">
+
+          <div class="flex items-center justify-between">
+
+            <span class="text-sm font-semibold text-muted">
+              Total Message Scans
+            </span>
+
+            <div
+              class="w-11 h-11 rounded-xl bg-forest/10 dark:bg-white/10 text-forest dark:text-[#6EE7B7] flex items-center justify-center">
+              <span class="material-symbols-outlined">manage_search</span>
+            </div>
+
+          </div>
+
+          <p class="text-4xl font-extrabold tracking-tight">
+            {{ message_total }}
+          </p>
+
+          <div class="flex items-center gap-1.5 text-xs font-bold
+        {% if scan_change_percentage > 0 %}text-emerald-ink
+        {% elif scan_change_percentage < 0 %}text-risk-high
+        {% else %}text-muted{% endif %}">
+
+            {% if scan_change_percentage is not None %}
+
+            <span class="material-symbols-outlined text-[16px]">
+              {% if scan_change_percentage > 0 %}
+              trending_up
+              {% elif scan_change_percentage < 0 %} trending_down {% else %} trending_flat {% endif %} </span>
+
+                {% if scan_change_percentage > 0 %}+{% endif %}
+                {{ scan_change_percentage }}%
+
+                <span class="font-medium text-muted">
+                  vs last month
+                </span>
+
+                {% else %}
+
+                <span class="font-medium text-muted">
+                  Previous month data unavailable
+                </span>
+
+                {% endif %}
+
+          </div>
+
+        </div>
+
+
+        <!-- DETECTED SCAM MESSAGES -->
+        <div
+          class="p-5 rounded-2xl bg-card shadow-card flex flex-col gap-4 hover:-translate-y-0.5 transition-transform">
+
+          <div class="flex items-center justify-between">
+
+            <span class="text-sm font-semibold text-muted">
+              Detected Scam Messages
+            </span>
+
+            <div class="w-11 h-11 rounded-xl bg-risk-med/15 text-risk-med flex items-center justify-center">
+              <span class="material-symbols-outlined">gpp_maybe</span>
+            </div>
+
+          </div>
+
+          <p class="text-4xl font-extrabold tracking-tight">
+            {{ detected_message_count }}
+          </p>
+
+          <div class="flex items-center gap-1.5 text-xs font-bold text-risk-med">
+
+            <span class="material-symbols-outlined text-[16px]">
+              shield
+            </span>
+
+            {{ scam_percentage }}%
+
+            <span class="font-medium text-muted">
+              of all message scans
+            </span>
+
+          </div>
+
+        </div>
+
+
+        <!-- HIGH-RISK DETECTIONS -->
+        <div
+          class="p-5 rounded-2xl bg-card shadow-card flex flex-col gap-4 hover:-translate-y-0.5 transition-transform">
+
+          <div class="flex items-center justify-between">
+
+            <span class="text-sm font-semibold text-muted">
+              High-Risk Detections
+            </span>
+
+            <div class="w-11 h-11 rounded-xl bg-risk-high/10 text-risk-high flex items-center justify-center">
+              <span class="material-symbols-outlined">warning</span>
+            </div>
+
+          </div>
+
+          <p class="text-4xl font-extrabold tracking-tight">
+            {{ high_risk_detections }}
+          </p>
+
+          <div class="flex items-center gap-1.5 text-xs font-bold
+        {% if high_risk_change_percentage > 0 %}text-risk-high
+        {% elif high_risk_change_percentage < 0 %}text-emerald-ink
+        {% else %}text-muted{% endif %}">
+
+            {% if high_risk_change_percentage is not None %}
+
+            <span class="material-symbols-outlined text-[16px]">
+              {% if high_risk_change_percentage > 0 %}
+              trending_up
+              {% elif high_risk_change_percentage < 0 %} trending_down {% else %} trending_flat {% endif %} </span>
+
+                {% if high_risk_change_percentage > 0 %}+{% endif %}
+                {{ high_risk_change_percentage }}%
+
+                <span class="font-medium text-muted">
+                  vs last month
+                </span>
+
+                {% else %}
+
+                <span class="font-medium text-muted">
+                  Previous month data unavailable
+                </span>
+
+                {% endif %}
+
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= REGISTERED USERS ================= -->
+    <!-- ================= LATEST REGISTERED USERS ================= -->
+
+    <section id="users" class="p-5 sm:p-6 rounded-2xl bg-card shadow-card">
+
+      <div class="flex items-center justify-between gap-3 mb-5">
+
+        <div>
+          <span class="text-xs font-bold uppercase tracking-widest text-emerald-ink">
+            User Management
+          </span>
+
+          <h2 class="text-2xl font-bold tracking-tight mt-1">
+            Latest Registered Users
+          </h2>
+
+          <p class="text-sm text-muted mt-1">
+            Recently joined users on ScamShield AI.
+          </p>
+        </div>
+
+        <a href="{% url 'user_management' %}"
+          class="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-bold transition">
+          View All Users
+        </a>
+
+      </div>
+
+
+      <div class="overflow-x-auto">
+
+        <table class="w-full min-w-[700px] text-left text-sm">
+
+          <thead>
+            <tr class="text-xs uppercase tracking-wider text-muted bg-soft">
+              <th class="py-3 px-4">User ID</th>
+              <th class="py-3 px-4">Full Name</th>
+              <th class="py-3 px-4">Username</th>
+              <th class="py-3 px-4">Email</th>
+              <th class="py-3 px-4">Role</th>
+              <th class="py-3 px-4">Registered</th>
+              <th class="py-3 px-4">Status</th>
+            </tr>
+          </thead>
+
+          <tbody class="divide-y divide-line">
+
+            {% for user in latest_users %}
+
+            <tr class="hover:bg-soft transition">
+
+              <td class="py-3 px-4 font-semibold">
+                USR-{{ user.pk|stringformat:"04d" }}
+              </td>
+
+              <td class="py-3 px-4 font-semibold">
+                {{ user.full_name|default:user.username }}
+              </td>
+
+              <td class="py-3 px-4">
+                {{ user.username }}
+              </td>
+
+              <td class="py-3 px-4">
+                {{ user.email }}
+              </td>
+
+              <td class="py-3 px-4">
+                {% if user.role == 'ADMIN' or user.is_superuser or user.is_staff %}
+                <span class="px-2 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-bold">
+                  Admin
+                </span>
+                {% else %}
+                <span class="px-2 py-1 rounded-full bg-mint text-emerald-ink text-xs font-bold">
+                  User
+                </span>
+                {% endif %}
+              </td>
+
+              <td class="py-3 px-4">
+                {{ user.date_joined|date:"d M Y" }}
+              </td>
+
+              <td class="py-3 px-4">
+                {% if user.is_active %}
+                <span class="text-emerald-600 font-semibold">Active</span>
+                {% else %}
+                <span class="text-red-500 font-semibold">Inactive</span>
+                {% endif %}
+              </td>
+
+            </tr>
+
+            {% empty %}
+
+            <tr>
+              <td colspan="7" class="py-8 text-center text-muted">
+                No registered users found.
+              </td>
+            </tr>
+
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </section>
+
+
+    <!-- ================= MESSAGE SCANS ================= -->
+    <section id="scans" class="scroll-mt-24 p-5 sm:p-6 rounded-2xl bg-card shadow-card">
+
+      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-5">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-widest text-emerald-ink">Activity</span>
+          <h2 class="text-2xl font-bold tracking-tight mt-1">Message Scans</h2>
+          <p class="text-sm text-muted mt-1">
+            Latest messages and URLs scanned by all users.
+          </p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+
+          <div class="relative sm:w-72">
+            <span
+              class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-muted text-[20px] pointer-events-none">
+              search
+            </span>
+
+            <input id="scanSearch" type="search" placeholder="Search content or username" aria-label="Search scans"
+              class="w-full h-11 pl-10 pr-3 rounded-xl bg-soft border border-line text-sm outline-none focus:border-emerald focus:ring-4 focus:ring-emerald/15 transition" />
+          </div>
+
+          <div class="flex items-center p-1 rounded-xl bg-soft" role="tablist" aria-label="Filter by risk">
+
+            <button data-risk-tab="all" type="button"
+              class="risk-tab px-3 h-9 rounded-lg text-xs font-bold bg-card shadow-sm">
+              All
+            </button>
+
+            <button data-risk-tab="Low" type="button" class="risk-tab px-3 h-9 rounded-lg text-xs font-bold text-muted">
+              Low
+            </button>
+
+            <button data-risk-tab="Medium" type="button"
+              class="risk-tab px-3 h-9 rounded-lg text-xs font-bold text-muted">
+              Medium
+            </button>
+
+            <button data-risk-tab="High" type="button"
+              class="risk-tab px-3 h-9 rounded-lg text-xs font-bold text-muted">
+              High
+            </button>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Scan Summary -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+
+        <div class="p-4 rounded-xl bg-soft">
+          <p class="text-xs font-semibold text-muted">Total Scans</p>
+          <p class="text-2xl font-extrabold mt-1">{{ total_scans }}</p>
+        </div>
+
+        <div class="p-4 rounded-xl bg-soft">
+          <p class="text-xs font-semibold text-muted">Low Risk</p>
+          <p class="text-2xl font-extrabold text-emerald-600 mt-1">{{ low_risk_count }}</p>
+        </div>
+
+        <div class="p-4 rounded-xl bg-soft">
+          <p class="text-xs font-semibold text-muted">Medium Risk</p>
+          <p class="text-2xl font-extrabold text-amber-600 mt-1">{{ medium_risk_count }}</p>
+        </div>
+
+        <div class="p-4 rounded-xl bg-soft">
+          <p class="text-xs font-semibold text-muted">High Risk</p>
+          <p class="text-2xl font-extrabold text-risk-high mt-1">{{ high_risk_count }}</p>
+        </div>
+
+      </div>
+
+      <!-- Scan Table -->
+      <div class="overflow-x-auto scroll-x -mx-1 px-1">
+
+        <table class="w-full min-w-[860px] text-left text-sm">
+
+          <thead>
+            <tr class="text-[11px] uppercase tracking-wider text-muted bg-soft">
+              <th class="py-3 px-4 rounded-l-xl font-bold">Scan ID</th>
+              <th class="py-3 px-4 font-bold">User</th>
+              <th class="py-3 px-4 font-bold">Content</th>
+              <th class="py-3 px-4 font-bold">Channel</th>
+              <th class="py-3 px-4 font-bold">Risk</th>
+              <th class="py-3 px-4 font-bold">Category</th>
+              <th class="py-3 px-4 rounded-r-xl font-bold">Scanned</th>
+            </tr>
+          </thead>
+
+          <tbody id="scanBody" class="divide-y divide-line"></tbody>
+
+        </table>
+
+        <p id="scanEmpty" class="hidden py-10 text-center text-sm text-muted">
+          No scans match your search or filter.
+        </p>
+
+      </div>
+
+    </section>
+
+
+    <!-- ================= DETECTED SCAMS ================= -->
+    <section id="scams" class="scroll-mt-24 flex flex-col gap-5">
+
+      <div>
+        <span class="text-xs font-bold uppercase tracking-widest text-emerald-ink">Threats</span>
+        <h2 class="text-2xl font-bold tracking-tight mt-1">Detected Scams</h2>
+        <p class="text-sm text-muted mt-1">
+          Messages and URLs classified as potential threats.
+        </p>
+      </div>
+
+      <!-- Category Cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-3 gap-3" id="categoryCards">
+
+        <div class="p-4 rounded-xl bg-card shadow-card">
+          <p class="text-xs font-semibold text-muted">Scam / Phishing</p>
+          <p class="text-2xl font-extrabold text-risk-high mt-2">{{ phishing_count }}</p>
+        </div>
+
+        <div class="p-4 rounded-xl bg-card shadow-card">
+          <p class="text-xs font-semibold text-muted">Spam</p>
+          <p class="text-2xl font-extrabold text-amber-600 mt-2">{{ spam_count }}</p>
+        </div>
+
+        <div class="p-4 rounded-xl bg-card shadow-card col-span-2 lg:col-span-1">
+          <p class="text-xs font-semibold text-muted">High Risk URLs</p>
+          <p class="text-2xl font-extrabold text-risk-high mt-2">{{ high_url_count }}</p>
+        </div>
+
+      </div>
+
+      <!-- Latest Scam Detections -->
+      <div class="p-5 sm:p-6 rounded-2xl bg-card shadow-card">
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+          <div>
+            <h3 class="font-bold text-lg">Latest Scam Detections</h3>
+            <p class="text-xs text-muted mt-1">
+              Messages and URLs classified as medium or high risk.
+            </p>
+          </div>
+
+          <span class="text-xs font-semibold text-muted">
+            {{ detected_count }} high-risk or spam records
+          </span>
+        </div>
+
+        <ul id="scamList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></ul>
+
+      </div>
+
+    </section>
+
+
+    <!-- ================= RISK ANALYSIS ================= -->
+    <section id="risk" class="scroll-mt-24 flex flex-col gap-5">
+
+      <div>
+        <span class="text-xs font-bold uppercase tracking-widest text-emerald-ink">Insights</span>
+        <h2 class="text-2xl font-bold tracking-tight mt-1">Risk Analysis</h2>
+        <p class="text-sm text-muted mt-1">
+          How scan results break down across risk levels and over time.
+        </p>
+      </div>
+
+      <!-- Risk Summary -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+
+        <div class="p-5 rounded-2xl bg-card shadow-card">
+          <p class="text-xs font-bold uppercase tracking-wider text-muted">Low Risk</p>
+          <p class="text-3xl font-extrabold text-emerald-600 mt-2">{{ low_risk_count }}</p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-card shadow-card">
+          <p class="text-xs font-bold uppercase tracking-wider text-muted">Medium Risk</p>
+          <p class="text-3xl font-extrabold text-amber-600 mt-2">{{ medium_risk_count }}</p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-card shadow-card">
+          <p class="text-xs font-bold uppercase tracking-wider text-muted">High Risk</p>
+          <p class="text-3xl font-extrabold text-risk-high mt-2">{{ high_risk_count }}</p>
+        </div>
+
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+        <!-- Donut Chart -->
+        <div class="lg:col-span-4 p-5 sm:p-6 rounded-2xl bg-card shadow-card flex flex-col">
+
+          <h3 class="font-bold text-lg">Risk Distribution</h3>
+          <p class="text-xs text-muted">All recorded scans</p>
+
+          <div class="relative flex items-center justify-center my-6">
+
+            <svg id="donut" viewBox="0 0 160 160" class="w-52 h-52 -rotate-90" role="img"
+              aria-label="Risk distribution chart">
+
+              <circle cx="80" cy="80" r="62" fill="none" stroke-width="16" class="stroke-soft"></circle>
+
+            </svg>
+
+            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span class="text-3xl font-extrabold" id="donutTotal">
+                {{ total_scans }}
+              </span>
+              <span class="text-[11px] uppercase tracking-wider font-bold text-muted">
+                Scans
+              </span>
+            </div>
+
+          </div>
+
+          <div class="grid gap-3" id="donutLegend">
+
+            <div class="flex items-center justify-between text-sm">
+              <span class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-sm bg-emerald"></span>
+                Low Risk
+              </span>
+              <strong>{{ low_risk_count }}</strong>
+            </div>
+
+            <div class="flex items-center justify-between text-sm">
+              <span class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-sm bg-risk-med"></span>
+                Medium Risk
+              </span>
+              <strong>{{ medium_risk_count }}</strong>
+            </div>
+
+            <div class="flex items-center justify-between text-sm">
+              <span class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-sm bg-risk-high"></span>
+                High Risk
+              </span>
+              <strong>{{ high_risk_count }}</strong>
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- Weekly Trend -->
+        <div class="lg:col-span-8 p-5 sm:p-6 rounded-2xl bg-card shadow-card flex flex-col">
+
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+
+            <div>
+              <h3 class="font-bold text-lg">Daily Scans by Risk</h3>
+              <p class="text-xs text-muted">Last 7 days</p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3 text-xs font-semibold">
+
+              <span class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-sm bg-emerald"></span>
+                Low
+              </span>
+
+              <span class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-sm bg-risk-med"></span>
+                Medium
+              </span>
+
+              <span class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-sm bg-risk-high"></span>
+                High
+              </span>
+
+            </div>
+
+          </div>
+
+          <div class="flex-1 min-h-[240px] flex gap-2">
+
+            <div class="flex flex-col justify-between text-[11px] font-mono text-muted pb-6 text-right w-10" id="yAxis">
+            </div>
+
+            <div class="flex-1 flex flex-col">
+
+              <div class="relative flex-1 grid grid-cols-7 gap-2 sm:gap-4 items-end border-b border-line" id="bars">
+
+                <div class="absolute inset-0 flex flex-col justify-between pointer-events-none" aria-hidden="true">
+                  <div class="border-t border-dashed border-line"></div>
+                  <div class="border-t border-dashed border-line"></div>
+                  <div class="border-t border-dashed border-line"></div>
+                  <div></div>
+                </div>
+
+              </div>
+
+              <div class="grid grid-cols-7 gap-2 sm:gap-4 pt-2 text-center text-xs font-semibold text-muted"
+                id="barLabels">
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- Top Scam Categories -->
+        <div class="lg:col-span-6 p-5 sm:p-6 rounded-2xl bg-card shadow-card">
+
+          <h3 class="font-bold text-lg mb-4">Top Scam Categories</h3>
+
+          <div class="grid gap-4" id="catBars">
+
+            <div>
+              <div class="flex justify-between gap-3 text-sm mb-2">
+                <span class="font-semibold">Scam / Phishing</span>
+                <span class="font-bold">{{ phishing_count }}</span>
+              </div>
+              <div class="h-3 rounded-full bg-soft overflow-hidden">
+                <div class="h-full rounded-full bg-risk-high"
+                  style="width: {% if detected_count %}{% widthratio phishing_count detected_count 100 %}{% else %}0{% endif %}%">
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between gap-3 text-sm mb-2">
+                <span class="font-semibold">Spam</span>
+                <span class="font-bold">{{ spam_count }}</span>
+              </div>
+              <div class="h-3 rounded-full bg-soft overflow-hidden">
+                <div class="h-full rounded-full bg-risk-med"
+                  style="width: {% if detected_count %}{% widthratio spam_count detected_count 100 %}{% else %}0{% endif %}%">
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between gap-3 text-sm mb-2">
+                <span class="font-semibold">High Risk URLs</span>
+                <span class="font-bold">{{ high_url_count }}</span>
+              </div>
+              <div class="h-3 rounded-full bg-soft overflow-hidden">
+                <div class="h-full rounded-full bg-risk-high"
+                  style="width: {% if detected_count %}{% widthratio high_url_count detected_count 100 %}{% else %}0{% endif %}%">
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- Scanner Activity -->
+        <div class="lg:col-span-6 p-5 sm:p-6 rounded-2xl bg-card shadow-card">
+
+          <h3 class="font-bold text-lg mb-4">Scanner Activity</h3>
+
+          <div class="grid grid-cols-2 gap-3">
+
+            <div class="p-4 rounded-xl bg-soft">
+              <p class="text-xs font-bold uppercase tracking-wider text-muted">
+                Message Scans
+              </p>
+              <p class="text-2xl font-extrabold mt-1">{{ message_total }}</p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-soft">
+              <p class="text-xs font-bold uppercase tracking-wider text-muted">
+                URL Scans
+              </p>
+              <p class="text-2xl font-extrabold mt-1">{{ url_total }}</p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-soft">
+              <p class="text-xs font-bold uppercase tracking-wider text-muted">
+                Spam Messages
+              </p>
+              <p class="text-2xl font-extrabold text-amber-600 mt-1">
+                {{ spam_count }}
+              </p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-soft">
+              <p class="text-xs font-bold uppercase tracking-wider text-muted">
+                Phishing Messages
+              </p>
+              <p class="text-2xl font-extrabold text-risk-high mt-1">
+                {{ phishing_count }}
+              </p>
+            </div>
+
+          </div>
+
+          <p class="text-xs text-muted mt-4">
+            Statistics are calculated from the recorded database scans.
+          </p>
+
+        </div>
+
+      </div>
+      {{ scan_data|json_script:"scan-data" }}
+      {{ daily_trend|json_script:"daily-trend-data" }}
+      {{ category_counts|json_script:"category-data" }}
+      {{ risk_counts|json_script:"risk-counts-data" }}
+    </section>
+
+  </main>
+
+  {% endblock %}
+  <footer class="border-t border-line bg-card">
+    <div
+      class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted">
+      <span>© <span id="year">2026</span> ScamShield AI · Admin Panel</span>
+      <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald"></span>All systems
+        operational</span>
+    </div>
+  </footer>
+
+
+  <!-- ================= USER DETAILS MODAL ================= -->
+  <div id="userModal" class="hidden fixed inset-0 z-[60] items-center justify-center p-4" role="dialog"
+    aria-modal="true" aria-labelledby="modalName">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" data-close></div>
+    <div class="relative w-full max-w-lg rounded-2xl bg-card shadow-2xl overflow-hidden">
+      <div class="bg-forest text-white p-6 flex items-center gap-4">
+        <div
+          class="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-xl font-extrabold text-[#6EE7B7]"
+          id="modalInitials"></div>
+        <div class="flex-1 min-w-0">
+          <h3 class="text-xl font-bold truncate" id="modalName"></h3>
+          <p class="text-white/70 text-sm truncate" id="modalUsername"></p>
+        </div>
+        <button type="button" aria-label="Close" data-close
+          class="w-9 h-9 rounded-lg hover:bg-white/10 flex items-center justify-center"><span
+            class="material-symbols-outlined">close</span></button>
+      </div>
+      <dl class="p-6 grid grid-cols-2 gap-x-4 gap-y-4 text-sm" id="modalDetails"></dl>
+      <div class="px-6 pb-6 flex justify-end gap-2">
+        <button type="button" data-close class="h-10 px-4 rounded-lg bg-soft font-semibold text-sm">Close</button>
+        <button type="button" id="toggleStatus" class="hidden h-10 px-4 rounded-lg font-bold text-sm"></button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+      /* ---------- Theme ---------- */
+      const root = document.documentElement;
+      const syncIcon = () => { $('themeIcon').textContent = root.classList.contains('dark') ? 'light_mode' : 'dark_mode'; };
+      syncIcon();
+      $('themeToggle').addEventListener('click', () => {
+        root.classList.toggle('dark');
+        try { localStorage.setItem('scamshield-theme', root.classList.contains('dark') ? 'dark' : 'light'); } catch (e) { }
+        syncIcon();
+      });
+
+      /* ---------- Date ---------- */
+      const now = new Date();
+      $('todayDate').textContent = now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      $('year').textContent = now.getFullYear();
+
+      /* ---------- Menus ---------- */
+      const menu = $('mobileMenu');
+      const setMenu = (open) => {
+        menu.classList.toggle('hidden', !open);
+        $('menuBtn').setAttribute('aria-expanded', String(open));
+        $('menuIcon').textContent = open ? 'close' : 'menu';
+      };
+      $('menuBtn').addEventListener('click', () => setMenu(menu.classList.contains('hidden')));
+      menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setMenu(false)));
+      window.addEventListener('resize', () => { if (window.innerWidth >= 1280) setMenu(false); });
+
+      const dropdowns = [['notifBtn', 'notifMenu'], ['profileBtn', 'profileMenu']];
+      const closeDropdowns = (except) => dropdowns.forEach(([b, m]) => {
+        if (m !== except) { $(m).classList.add('hidden'); $(b).setAttribute('aria-expanded', 'false'); }
+      });
+      dropdowns.forEach(([b, m]) => $(b).addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeDropdowns(m);
+        const open = $(m).classList.toggle('hidden') === false;
+        $(b).setAttribute('aria-expanded', String(open));
+      }));
+      dropdowns.forEach(([, m]) => $(m).addEventListener('click', (e) => e.stopPropagation()));
+      document.addEventListener('click', () => closeDropdowns());
+      $('markRead').addEventListener('click', () => { $('notifDot').classList.add('hidden'); });
+
+      /* ---------- Active nav on scroll ---------- */
+      const sectionIds = ['dashboard', 'users', 'scans', 'scams', 'risk'];
+      const navLinks = document.querySelectorAll('[data-section]');
+      const onScroll = () => {
+        const y = window.scrollY + 140;
+        let current = 'dashboard';
+        sectionIds.forEach(id => { if ($(id).getBoundingClientRect().top + window.scrollY <= y) current = id; });
+        if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) current = 'risk';
+        navLinks.forEach(l => {
+          const on = l.dataset.section === current;
+          l.classList.toggle('is-active', on);
+          on ? l.setAttribute('aria-current', 'page') : l.removeAttribute('aria-current');
+        });
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      /* =====================================================
+         SAMPLE DATA — replace with values from your database,
+         e.g. fetch('/api/admin/users').then(r => r.json())
+         ===================================================== */
+      // Registered users come from the Django view (admin_dashboard → users_data)
+      const usersScript = document.getElementById('users-data');
+      const users = usersScript ? JSON.parse(usersScript.textContent) : [];
+
+      const scans = [
+        ['rahulm', 'URGENT: Your bank account is locked. Verify now at secure-bank-verify.info', 'SMS', 'High', 'Bank Phishing', '2 min ago'],
+        ['priya_n', 'Your package could not be delivered. Pay ₹25 redelivery fee at parcel-track.top', 'SMS', 'High', 'Delivery Scam', '6 min ago'],
+        ['sneha.t', 'Team lunch moved to Friday 1 PM. Please confirm attendance.', 'Email', 'Low', '—', '11 min ago'],
+        ['divyak', 'Earn ₹5,000/day working from home! Just like videos. Join on Telegram.', 'WhatsApp', 'Medium', 'Job Scam', '18 min ago'],
+        ['kevin.m', 'https://github.com/features/actions', 'URL', 'Low', '—', '24 min ago'],
+        ['lakshmi_p', 'Congratulations! You won an iPhone in our lucky draw. Claim within 1 hour.', 'SMS', 'High', 'Prize / Lottery', '31 min ago'],
+        ['aditya.s', 'Your electricity will be disconnected tonight. Call this officer immediately.', 'SMS', 'High', 'Utility Scam', '42 min ago'],
+        ['meera_i', 'Hi, this is your OTP 482913 for login. Do not share it with anyone.', 'SMS', 'Low', '—', '55 min ago'],
+        ['joelg', 'Double your crypto in 24 hours. Send USDT to this wallet to start.', 'WhatsApp', 'High', 'Crypto Scam', '1 hr ago'],
+        ['ananya.r', 'Your KYC is pending. Update PAN details at kyc-update-now.xyz', 'SMS', 'Medium', 'Bank Phishing', '1 hr ago'],
+        ['riya.s', 'Reminder: your dentist appointment is tomorrow at 10 AM.', 'SMS', 'Low', '—', '2 hr ago'],
+        ['harishk', 'Part-time job offer: ₹800 per task. Pay ₹500 registration fee first.', 'Email', 'Medium', 'Job Scam', '2 hr ago'],
+        ['neha.g', 'http://192.168.10.4/login-verify', 'URL', 'High', 'Bank Phishing', '3 hr ago'],
+        ['sanjay_p', 'Your order #4521 has shipped and will arrive Monday.', 'Email', 'Low', '—', '3 hr ago']
+      ].map((s, i) => ({ id: 'SCN-' + (52840 - i), user: s[0], content: s[1], channel: s[2], risk: s[3], category: s[4], time: s[5] }));
+
+      const categories = [
+        { name: 'Bank Phishing', count: 1512, icon: 'account_balance' },
+        { name: 'Delivery Scam', count: 864, icon: 'local_shipping' },
+        { name: 'Job Scam', count: 733, icon: 'work' },
+        { name: 'Prize / Lottery', count: 648, icon: 'redeem' },
+        { name: 'Crypto Scam', count: 560, icon: 'currency_bitcoin' }
+      ];
+      const riskTotals = { Low: 14325, Medium: 3221, High: 1096 };
+      const week = [
+        { d: 'Mon', Low: 1980, Medium: 420, High: 140 }, { d: 'Tue', Low: 2110, Medium: 455, High: 162 },
+        { d: 'Wed', Low: 2240, Medium: 510, High: 190 }, { d: 'Thu', Low: 2050, Medium: 470, High: 151 },
+        { d: 'Fri', Low: 2300, Medium: 530, High: 205 }, { d: 'Sat', Low: 1720, Medium: 390, High: 118 },
+        { d: 'Sun', Low: 1925, Medium: 446, High: 130 }
+      ];
+
+      /* ---------- Shared badge styles ---------- */
+      const RISK_STYLE = {
+        Low: { badge: 'bg-emerald/10 text-emerald-ink', dot: 'bg-emerald', color: 'rgb(var(--c-emerald))' },
+        Medium: { badge: 'bg-risk-med/15 text-amber-700 dark:text-amber-300', dot: 'bg-risk-med', color: 'rgb(var(--c-amber))' },
+        High: { badge: 'bg-risk-high/10 text-risk-high', dot: 'bg-risk-high', color: 'rgb(var(--c-red))' }
+      };
+      const roleBadge = (r) => r === 'Admin'
+        ? '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald text-white text-xs font-bold"><span class="material-symbols-outlined text-[14px]">shield_person</span>Admin</span>'
+        : '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-soft text-muted text-xs font-bold border border-line"><span class="material-symbols-outlined text-[14px]">person</span>User</span>';
+      const statusBadge = (s) => s === 'Active'
+        ? '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-mint text-emerald-ink text-xs font-bold"><span class="w-1.5 h-1.5 rounded-full bg-emerald"></span>Active</span>'
+        : '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-soft text-muted text-xs font-bold"><span class="w-1.5 h-1.5 rounded-full bg-muted"></span>Inactive</span>';
+      const initials = (n) => n.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
+      const fmtDate = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+      const fmt = (n) => n.toLocaleString();
+
+      /* ---------- Registered users table ---------- */
+      const PAGE_SIZE = 8;
+      let userPage = 1;
+      const filteredUsers = () => {
+        const q = $('userSearch').value.trim().toLowerCase();
+        const role = $('roleFilter').value, status = $('statusFilter').value;
+        return users.filter(u =>
+          (!q || [u.name, u.username, u.email].some(f => f.toLowerCase().includes(q))) &&
+          (role === 'all' || u.role === role) &&
+          (status === 'all' || u.status === status));
+      };
+      function renderUsers() {
+        $('userTotal').textContent = fmt(users.length);
+        const list = filteredUsers();
+        const pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+        userPage = Math.min(userPage, pages);
+        const start = (userPage - 1) * PAGE_SIZE;
+        const pageItems = list.slice(start, start + PAGE_SIZE);
+
+        $('userBody').innerHTML = pageItems.map(u => `
+      <tr class="hover:bg-soft/60 transition-colors">
+        <td class="py-3 px-4 font-mono text-xs text-muted whitespace-nowrap">${esc(u.id)}</td>
+        <td class="py-3 px-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-full bg-mint text-emerald-ink flex items-center justify-center text-[11px] font-extrabold shrink-0">${esc(initials(u.name))}</div>
+            <span class="font-semibold whitespace-nowrap">${esc(u.name)}</span>
+          </div>
+        </td>
+        <td class="py-3 px-4 text-muted whitespace-nowrap">@${esc(u.username)}</td>
+        <td class="py-3 px-4 whitespace-nowrap">${esc(u.email)}</td>
+        <td class="py-3 px-4 whitespace-nowrap ${u.phone ? '' : 'text-muted'}">${u.phone ? esc(u.phone) : '—'}</td>
+        <td class="py-3 px-4">${roleBadge(u.role)}</td>
+        <td class="py-3 px-4 whitespace-nowrap text-muted">${esc(fmtDate(u.date))}</td>
+        <td class="py-3 px-4">${statusBadge(u.status)}</td>
+        <td class="py-3 px-4 text-right">
+          <button type="button" data-view="${esc(u.id)}" class="inline-flex items-center gap-1 h-8 px-3 rounded-lg bg-soft hover:bg-emerald hover:text-white text-xs font-bold transition-colors whitespace-nowrap">
+            View Details<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+          </button>
+        </td>
+      </tr>`).join('');
+        $('userEmpty').classList.toggle('hidden', list.length > 0);
+        $('userRange').textContent = list.length ? `Showing ${start + 1}–${start + pageItems.length} of ${list.length}` : '';
+
+        const btn = (label, page, disabled, active) =>
+          `<button type="button" data-page="${page}" ${disabled ? 'disabled' : ''} class="min-w-9 h-9 px-2.5 rounded-lg text-sm font-bold transition-colors ${active ? 'bg-emerald text-white' : 'bg-soft hover:bg-mint'} disabled:opacity-40 disabled:cursor-not-allowed">${label}</button>`;
+        let pager = btn('‹', userPage - 1, userPage === 1, false);
+        for (let p = 1; p <= pages; p++) pager += btn(p, p, false, p === userPage);
+        pager += btn('›', userPage + 1, userPage === pages, false);
+        $('userPager').innerHTML = list.length ? pager : '';
+      }
+      ['userSearch', 'roleFilter', 'statusFilter'].forEach(id => $(id).addEventListener('input', () => { userPage = 1; renderUsers(); }));
+      $('userPager').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-page]');
+        if (b && !b.disabled) { userPage = +b.dataset.page; renderUsers(); }
+      });
+
+      /* ---------- User details modal ---------- */
+      const modal = $('userModal');
+      let modalUser = null, lastFocus = null;
+      function openModal(u) {
+        modalUser = u; lastFocus = document.activeElement;
+        $('modalInitials').textContent = initials(u.name);
+        $('modalName').textContent = u.name;
+        $('modalUsername').textContent = '@' + u.username;
+        const row = (k, val, full) => `<div class="${full ? 'col-span-2' : ''}"><dt class="text-[11px] uppercase tracking-wider font-bold text-muted">${k}</dt><dd class="mt-1 font-semibold break-words">${val}</dd></div>`;
+        $('modalDetails').innerHTML =
+          row('User ID', esc(u.id)) + row('Role', roleBadge(u.role)) +
+          row('Email Address', esc(u.email), true) +
+          row('Phone Number', u.phone ? esc(u.phone) : '<span class="text-muted">Not provided</span>') +
+          row('Registered', esc(fmtDate(u.date))) +
+          row('Account Status', statusBadge(u.status)) + row('Total Scans', fmt(u.scans));
+        const active = u.status === 'Active';
+        $('toggleStatus').textContent = active ? 'Deactivate Account' : 'Activate Account';
+        $('toggleStatus').className = 'hidden h-10 px-4 rounded-lg font-bold text-sm transition-colors ' +
+          (active ? 'bg-risk-high/10 text-risk-high hover:bg-risk-high hover:text-white' : 'bg-emerald text-white hover:opacity-90');
+        modal.classList.remove('hidden'); modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        modal.querySelector('[data-close].h-9').focus();
+      }
+      function closeModal() {
+        modal.classList.add('hidden'); modal.classList.remove('flex');
+        document.body.style.overflow = '';
+        if (lastFocus) lastFocus.focus();
+      }
+      $('userBody').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-view]');
+        if (b) openModal(users.find(u => u.id === b.dataset.view));
+      });
+      modal.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', closeModal));
+      // UI only — replace with a PATCH request to your API
+      $('toggleStatus').addEventListener('click', () => {
+        modalUser.status = modalUser.status === 'Active' ? 'Inactive' : 'Active';
+        renderUsers(); openModal(modalUser);
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { if (!modal.classList.contains('hidden')) closeModal(); closeDropdowns(); setMenu(false); }
+      });
+
+      /* ---------- Message scans table ---------- */
+      let riskFilter = 'all';
+      const channelIcon = { SMS: 'sms', Email: 'mail', WhatsApp: 'chat', URL: 'link' };
+      function renderScans() {
+        const q = $('scanSearch').value.trim().toLowerCase();
+        const list = scans.filter(s =>
+          (riskFilter === 'all' || s.risk === riskFilter) &&
+          (!q || s.content.toLowerCase().includes(q) || s.user.toLowerCase().includes(q)));
+        $('scanBody').innerHTML = list.map(s => {
+          const r = RISK_STYLE[s.risk];
+          return `<tr class="hover:bg-soft/60 transition-colors">
+        <td class="py-3 px-4 font-mono text-xs text-muted whitespace-nowrap">${esc(s.id)}</td>
+        <td class="py-3 px-4 whitespace-nowrap font-semibold">@${esc(s.user)}</td>
+        <td class="py-3 px-4 max-w-[340px]"><span class="block truncate" title="${esc(s.content)}">${esc(s.content)}</span></td>
+        <td class="py-3 px-4 whitespace-nowrap"><span class="inline-flex items-center gap-1 text-xs font-semibold text-muted"><span class="material-symbols-outlined text-[16px]">${channelIcon[s.channel]}</span>${esc(s.channel)}</span></td>
+        <td class="py-3 px-4"><span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${r.badge}"><span class="w-1.5 h-1.5 rounded-full ${r.dot}"></span>${s.risk}</span></td>
+        <td class="py-3 px-4 whitespace-nowrap text-muted">${esc(s.category)}</td>
+        <td class="py-3 px-4 whitespace-nowrap text-muted text-xs">${esc(s.time)}</td>
+      </tr>`;
+        }).join('');
+        $('scanEmpty').classList.toggle('hidden', list.length > 0);
+      }
+      $('scanSearch').addEventListener('input', renderScans);
+      document.querySelectorAll('[data-risk-tab]').forEach(btn => btn.addEventListener('click', () => {
+        riskFilter = btn.dataset.riskTab;
+        document.querySelectorAll('.risk-tab').forEach(b => {
+          const on = b === btn;
+          b.classList.toggle('bg-card', on); b.classList.toggle('shadow-sm', on); b.classList.toggle('text-muted', !on);
+        });
+        renderScans();
+      }));
+
+      /* ---------- Detected scams ---------- */
+      const catTotal = categories.reduce((a, c) => a + c.count, 0);
+      $('categoryCards').innerHTML = categories.map((c, i) => `
+    <div class="p-4 rounded-2xl bg-card shadow-card ${i === 4 ? 'col-span-2 lg:col-span-1' : ''}">
+      <div class="w-10 h-10 rounded-xl bg-mint text-emerald-ink flex items-center justify-center mb-3"><span class="material-symbols-outlined">${c.icon}</span></div>
+      <p class="text-xs font-semibold text-muted">${esc(c.name)}</p>
+      <p class="text-2xl font-extrabold mt-0.5">${fmt(c.count)}</p>
+      <p class="text-[11px] font-bold text-emerald-ink mt-1">${(c.count / catTotal * 100).toFixed(1)}% of scams</p>
+    </div>`).join('');
+      $('scamList').innerHTML = scans.filter(s => s.risk !== 'Low').slice(0, 6).map(s => {
+        const r = RISK_STYLE[s.risk];
+        return `<li class="p-4 rounded-xl bg-soft flex gap-3">
+      <span class="material-symbols-outlined ${s.risk === 'High' ? 'text-risk-high' : 'text-risk-med'} shrink-0">${s.risk === 'High' ? 'dangerous' : 'warning'}</span>
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center justify-between gap-2 mb-1">
+          <span class="text-xs font-bold">${esc(s.category)}</span>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${r.badge}">${s.risk}</span>
+        </div>
+        <p class="text-sm line-clamp-2">${esc(s.content)}</p>
+        <p class="text-[11px] text-muted mt-1.5">@${esc(s.user)} · ${esc(s.channel)} · ${esc(s.time)}</p>
+      </div>
+    </li>`;
+      }).join('');
+
+      /* ---------- Risk donut ---------- */
+      (function renderDonut() {
+        const NS = 'http://www.w3.org/2000/svg', svg = $('donut');
+        const total = Object.values(riskTotals).reduce((a, b) => a + b, 0);
+        const C = 2 * Math.PI * 62, GAP = 3;
+        let offset = 0;
+        Object.entries(riskTotals).forEach(([k, n]) => {
+          const len = n / total * C;
+          const c = document.createElementNS(NS, 'circle');
+          c.setAttribute('cx', 80); c.setAttribute('cy', 80); c.setAttribute('r', 62);
+          c.setAttribute('fill', 'none'); c.setAttribute('stroke-width', 16);
+          c.style.stroke = RISK_STYLE[k].color;
+          c.setAttribute('stroke-dasharray', `${Math.max(len - GAP, 0.5)} ${C}`);
+          c.setAttribute('stroke-dashoffset', -offset);
+          svg.appendChild(c);
+          offset += len;
+        });
+        $('donutTotal').textContent = fmt(total);
+        $('donutLegend').innerHTML = Object.entries(riskTotals).map(([k, n]) => `
+      <div class="flex items-center justify-between px-3 py-2 rounded-lg bg-soft text-sm">
+        <span class="flex items-center gap-2 font-semibold"><span class="w-2.5 h-2.5 rounded-full ${RISK_STYLE[k].dot}"></span>${k} Risk</span>
+        <span class="font-bold">${fmt(n)} <span class="text-muted font-semibold">· ${(n / total * 100).toFixed(1)}%</span></span>
+      </div>`).join('');
+      })();
+
+      /* ---------- Weekly stacked bars ---------- */
+      (function renderBars() {
+        const max = Math.max(...week.map(d => d.Low + d.Medium + d.High));
+        const niceMax = Math.ceil(max / 1000) * 1000;
+        $('yAxis').innerHTML = [1, 2 / 3, 1 / 3, 0].map(f => `<span>${(niceMax * f / 1000).toFixed(1).replace('.0', '')}k</span>`).join('');
+        const bars = $('bars');
+        week.forEach(d => {
+          const col = document.createElement('div');
+          col.className = 'relative h-full flex flex-col justify-end items-center group';
+          const total = d.Low + d.Medium + d.High;
+          col.innerHTML = `
+        <div class="absolute -top-1 -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 px-2.5 py-1.5 rounded-lg bg-forest text-white text-[11px] whitespace-nowrap shadow-lg">
+          <b>${d.d}: ${fmt(total)}</b><br>Low ${fmt(d.Low)} · Med ${fmt(d.Medium)} · High ${fmt(d.High)}
+        </div>
+        <div class="w-full max-w-[44px] flex flex-col-reverse rounded-t-md overflow-hidden" style="height:${total / niceMax * 100}%">
+          <div class="bg-emerald" style="height:${d.Low / total * 100}%"></div>
+          <div class="bg-risk-med border-b-2 border-card" style="height:${d.Medium / total * 100}%"></div>
+          <div class="bg-risk-high border-b-2 border-card" style="height:${d.High / total * 100}%"></div>
+        </div>`;
+          bars.appendChild(col);
+          const lab = document.createElement('span'); lab.textContent = d.d;
+          $('barLabels').appendChild(lab);
+        });
+      })();
+
+      /* ---------- Category bars ---------- */
+      const catMax = Math.max(...categories.map(c => c.count));
+      $('catBars').innerHTML = categories.map(c => `
+    <div>
+      <div class="flex items-center justify-between text-sm mb-1.5">
+        <span class="font-semibold flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-emerald-ink">${c.icon}</span>${esc(c.name)}</span>
+        <span class="font-bold">${fmt(c.count)}</span>
+      </div>
+      <div class="h-2.5 rounded-full bg-soft overflow-hidden"><div class="h-full rounded-full bg-emerald" style="width:${c.count / catMax * 100}%"></div></div>
+    </div>`).join('');
+
+      renderUsers();
+      renderScans();
+    });
+  </script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+      document.querySelectorAll(".auto-dismiss").forEach(function (alert) {
+
+        function removeAlert() {
+          alert.classList.add("opacity-0", "translate-y-2");
+
+          setTimeout(function () {
+            alert.remove();
+          }, 500);
+        }
+
+        // Close manually
+        const closeButton = alert.querySelector(".dismiss");
+
+        closeButton.addEventListener("click", removeAlert);
+
+        // Automatically remove after 5 seconds
+        setTimeout(removeAlert, 5000);
+
+      });
+
+    });
+  </script>
+
+  <script>
+
+    document.addEventListener('DOMContentLoaded', function () {
+
+      // =====================================================
+      // LOAD DATA FROM DJANGO
+      // =====================================================
+
+      const scans = JSON.parse(
+        document.getElementById('scan-data').textContent
+      );
+
+      const dailyData = JSON.parse(
+        document.getElementById('daily-trend-data').textContent
+      );
+
+      const categories = JSON.parse(
+        document.getElementById('category-data').textContent
+      );
+
+      const riskCounts = JSON.parse(
+        document.getElementById('risk-counts-data').textContent
+      );
+
+
+      // =====================================================
+      // COMMON FUNCTIONS
+      // =====================================================
+
+      function escapeHTML(value) {
+        return String(value ?? '').replace(/[&<>"']/g, function (char) {
+          return {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+          }[char];
+        });
+      }
+
+      function riskBadge(risk) {
+
+        const styles = {
+          Low: 'bg-emerald/10 text-emerald-ink',
+          Medium: 'bg-risk-med/10 text-risk-med',
+          High: 'bg-risk-high/10 text-risk-high'
+        };
+
+        return `
+            <span class="px-3 py-1 rounded-full text-xs font-bold ${styles[risk] || 'bg-soft text-muted'}">
+                ${escapeHTML(risk)}
+            </span>
+        `;
+      }
+
+
+      // =====================================================
+      // MESSAGE SCANS
+      // =====================================================
+
+      const scanBody = document.getElementById('scanBody');
+      const scanEmpty = document.getElementById('scanEmpty');
+      const scanSearch = document.getElementById('scanSearch');
+
+      let activeRisk = 'all';
+
+      function renderScans() {
+
+        const searchValue = scanSearch.value.toLowerCase().trim();
+
+        const filtered = scans.filter(scan => {
+
+          const matchesRisk =
+            activeRisk === 'all' || scan.risk === activeRisk;
+
+          const searchableText = [
+            scan.scan_id,
+            scan.user,
+            scan.content,
+            scan.channel,
+            scan.category
+          ].join(' ').toLowerCase();
+
+          return matchesRisk && searchableText.includes(searchValue);
+        });
+
+        scanBody.innerHTML = filtered.map(scan => `
+            <tr class="hover:bg-soft/60 transition">
+
+                <td class="py-3 px-4 font-semibold">
+                    ${escapeHTML(scan.scan_id)}
+                </td>
+
+                <td class="py-3 px-4">
+                    ${escapeHTML(scan.user)}
+                </td>
+
+                <td class="py-3 px-4 max-w-xs">
+                    <p class="line-clamp-2 break-all">
+                        ${escapeHTML(scan.content)}
+                    </p>
+                </td>
+
+                <td class="py-3 px-4">
+                    ${escapeHTML(scan.channel)}
+                </td>
+
+                <td class="py-3 px-4">
+                    ${riskBadge(scan.risk)}
+                </td>
+
+                <td class="py-3 px-4">
+                    ${escapeHTML(scan.category)}
+                </td>
+
+                <td class="py-3 px-4 whitespace-nowrap text-muted">
+                    ${escapeHTML(scan.scanned)}
+                </td>
+
+            </tr>
+        `).join('');
+
+        scanEmpty.classList.toggle('hidden', filtered.length > 0);
+      }
+
+      scanSearch.addEventListener('input', renderScans);
+
+      document.querySelectorAll('[data-risk-tab]').forEach(button => {
+
+        button.addEventListener('click', function () {
+
+          activeRisk = this.dataset.riskTab;
+
+          document.querySelectorAll('[data-risk-tab]').forEach(tab => {
+            tab.classList.remove('bg-card', 'shadow-sm');
+            tab.classList.add('text-muted');
+          });
+
+          this.classList.add('bg-card', 'shadow-sm');
+          this.classList.remove('text-muted');
+
+          renderScans();
+        });
+
+      });
+
+      renderScans();
+
+
+      // =====================================================
+      // DETECTED SCAMS
+      // =====================================================
+
+      const scamList = document.getElementById('scamList');
+
+      const detectedScans = scans.filter(scan =>
+        scan.risk === 'Medium' || scan.risk === 'High'
+      );
+
+      scamList.innerHTML = detectedScans.slice(0, 10).map(scan => `
+
+        <li class="p-4 rounded-xl bg-soft border border-line">
+
+            <div class="flex items-center justify-between gap-2 mb-3">
+
+                <span class="text-xs font-bold text-muted">
+                    ${escapeHTML(scan.scan_id)} · ${escapeHTML(scan.channel)}
+                </span>
+
+                ${riskBadge(scan.risk)}
+
+            </div>
+
+            <p class="text-sm font-semibold break-all line-clamp-3">
+                ${escapeHTML(scan.content)}
+            </p>
+
+            <div class="flex flex-wrap justify-between gap-2 mt-3 text-xs text-muted">
+
+                <span>
+                    User: ${escapeHTML(scan.user)}
+                </span>
+
+                <span>
+                    ${escapeHTML(scan.scanned)}
+                </span>
+
+            </div>
+
+            <p class="text-xs text-muted mt-2">
+                Category: ${escapeHTML(scan.category)}
+            </p>
+
+        </li>
+
+    `).join('');
+
+      if (detectedScans.length === 0) {
+
+        scamList.innerHTML = `
+            <li class="col-span-full text-center py-10 text-muted">
+                <span class="material-symbols-outlined text-4xl mb-2">
+                    verified_user
+                </span>
+                <p class="font-semibold">No potential threats detected.</p>
+                <p class="text-xs mt-1">No medium or high-risk records are available.</p>
+            </li>
+        `;
+
+      }
+
+
+      // =====================================================
+      // RISK DISTRIBUTION DONUT CHART
+      // =====================================================
+
+      const lowCount = Number(riskCounts.low);
+      const mediumCount = Number(riskCounts.medium);
+      const highCount = Number(riskCounts.high);
+      const total = Number(riskCounts.total);
+
+      document.getElementById('donutTotal').textContent = total;
+
+      const donut = document.getElementById('donut');
+
+      // Remove previous chart segments
+      donut.querySelectorAll('.donut-segment').forEach(circle => {
+        circle.remove();
+      });
+
+      const radius = 62;
+      const circumference = 2 * Math.PI * radius;
+
+      const riskSegments = [
+        {
+          label: 'Low Risk',
+          count: lowCount,
+          color: 'rgb(var(--c-emerald))'
+        },
+        {
+          label: 'Medium Risk',
+          count: mediumCount,
+          color: 'rgb(var(--c-risk-med))'
+        },
+        {
+          label: 'High Risk',
+          count: highCount,
+          color: 'rgb(var(--c-risk-high))'
+        }
+      ];
+
+      let offset = 0;
+
+      riskSegments.forEach(segment => {
+
+        if (segment.count <= 0 || total <= 0) return;
+
+        const length = (segment.count / total) * circumference;
+
+        const circle = document.createElementNS(
+          'http://www.w3.org/2000/svg',
+          'circle'
+        );
+
+        circle.setAttribute('cx', '80');
+        circle.setAttribute('cy', '80');
+        circle.setAttribute('r', radius);
+        circle.setAttribute('fill', 'none');
+        circle.setAttribute('stroke', segment.color);
+        circle.setAttribute('stroke-width', '16');
+        circle.setAttribute('stroke-dasharray',
+          `${length} ${circumference - length}`
+        );
+        circle.setAttribute('stroke-dashoffset', -offset);
+        circle.setAttribute('class', 'donut-segment');
+
+        donut.appendChild(circle);
+
+        offset += length;
+
+      });
+
+
+      // Update donut legend
+      const legend = document.getElementById('donutLegend');
+
+      legend.innerHTML = riskSegments.map(segment => `
+
+        <div class="flex items-center justify-between text-sm">
+
+            <span class="flex items-center gap-2">
+
+                <span class="w-3 h-3 rounded-sm"
+                      style="background:${segment.color}">
+                </span>
+
+                ${segment.label}
+
+            </span>
+
+            <strong>${segment.count}</strong>
+
+        </div>
+
+    `).join('');
+
+
+      // =====================================================
+      // LAST 7 DAYS BAR CHART
+      // =====================================================
+
+      const bars = document.getElementById('bars');
+      const barLabels = document.getElementById('barLabels');
+      const yAxis = document.getElementById('yAxis');
+
+      const maxDaily = Math.max(
+        1,
+        ...dailyData.map(day =>
+          Number(day.low) + Number(day.medium) + Number(day.high)
+        )
+      );
+
+      const axisMax = Math.ceil(maxDaily / 5) * 5 || 1;
+
+      const axisValues = [
+        axisMax,
+        Math.round(axisMax * 2 / 3),
+        Math.round(axisMax / 3),
+        0
+      ];
+
+      yAxis.innerHTML = axisValues.map(value => `
+        <span>${value}</span>
+    `).join('');
+
+
+      // Remove previous bars but retain grid lines
+      bars.innerHTML = `
+        <div class="absolute inset-0 flex flex-col justify-between pointer-events-none"
+             aria-hidden="true">
+
+            <div class="border-t border-dashed border-line"></div>
+            <div class="border-t border-dashed border-line"></div>
+            <div class="border-t border-dashed border-line"></div>
+            <div></div>
+
+        </div>
+    `;
+
+
+      dailyData.forEach(day => {
+
+        const low = Number(day.low);
+        const medium = Number(day.medium);
+        const high = Number(day.high);
+
+        const dayTotal = low + medium + high;
+
+        const totalHeight = (dayTotal / axisMax) * 100;
+
+        const column = document.createElement('div');
+
+        column.className =
+          'relative z-10 h-full flex flex-col justify-end items-center';
+
+        column.innerHTML = `
+
+            <div class="w-full max-w-10 flex flex-col justify-end rounded-t-md overflow-hidden"
+                 style="height:${totalHeight}%"
+                 title="${escapeHTML(day.date)}: Low ${low}, Medium ${medium}, High ${high}">
+
+                ${high > 0 ? `
+                    <div class="bg-risk-high w-full"
+                         style="height:${(high / dayTotal) * 100}%">
+                    </div>
+                ` : ''}
+
+                ${medium > 0 ? `
+                    <div class="bg-risk-med w-full"
+                         style="height:${(medium / dayTotal) * 100}%">
+                    </div>
+                ` : ''}
+
+                ${low > 0 ? `
+                    <div class="bg-emerald w-full"
+                         style="height:${(low / dayTotal) * 100}%">
+                    </div>
+                ` : ''}
+
+            </div>
+
+        `;
+
+        bars.appendChild(column);
+
+      });
+
+
+      // Date labels
+      barLabels.innerHTML = dailyData.map(day => `
+        <span>${escapeHTML(day.date)}</span>
+    `).join('');
+
+
+      // =====================================================
+      // TOP SCAM CATEGORIES
+      // =====================================================
+
+      const catBars = document.getElementById('catBars');
+
+      const maxCategory = Math.max(
+        1,
+        ...categories.map(category => Number(category.count))
+      );
+
+      catBars.innerHTML = categories.map((category, index) => {
+
+        const percentage =
+          (Number(category.count) / maxCategory) * 100;
+
+        const color = index === 1 ? 'bg-risk-med' : 'bg-risk-high';
+
+        return `
+
+            <div>
+
+                <div class="flex justify-between gap-3 text-sm mb-2">
+
+                    <span class="font-semibold">
+                        ${escapeHTML(category.name)}
+                    </span>
+
+                    <span class="font-bold">
+                        ${Number(category.count)}
+                    </span>
+
+                </div>
+
+                <div class="h-3 rounded-full bg-soft overflow-hidden">
+
+                    <div class="h-full rounded-full ${color}"
+                         style="width:${percentage}%">
+                    </div>
+
+                </div>
+
+            </div>
+
+        `;
+
+      }).join('');
+
+
+    });
+
+  </script>
+
+
+</body>

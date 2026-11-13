@@ -1,0 +1,265 @@
+
+{% extends 'adminapp/admin_dashboard.html' %}
+
+{% block content %}
+
+<section id="users" class="scroll-mt-24 p-5 sm:p-6 rounded-2xl bg-card shadow-card">
+
+    <!-- Header -->
+    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-5">
+
+        <div>
+            <span class="text-xs font-bold uppercase tracking-widest text-emerald-ink">
+                User Management
+            </span>
+
+            <div class="flex items-center gap-2 mt-1">
+                <h2 class="text-2xl font-bold tracking-tight">
+                    Registered Users
+                </h2>
+
+                <span class="px-2.5 py-0.5 rounded-full bg-mint text-emerald-ink text-xs font-bold">
+                    {{ total_users }} users
+                </span>
+            </div>
+
+            <p class="text-sm text-muted mt-1">
+                Search, filter and manage all registered users.
+            </p>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+
+            <div class="relative sm:w-72">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-muted text-[20px]">
+                    search
+                </span>
+
+                <input
+                    id="userSearch"
+                    type="search"
+                    placeholder="Search name, username or email"
+                    class="w-full h-11 pl-10 pr-3 rounded-xl bg-soft border border-line text-sm outline-none focus:border-emerald">
+            </div>
+
+            <select id="roleFilter"
+                class="h-11 px-3 rounded-xl bg-soft border border-line text-sm font-semibold">
+                <option value="all">All roles</option>
+                <option value="admin">Admin</option>
+                <option value="user">User</option>
+            </select>
+
+            <select id="statusFilter"
+                class="h-11 px-3 rounded-xl bg-soft border border-line text-sm font-semibold">
+                <option value="all">All statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="overflow-x-auto">
+
+        <table class="w-full min-w-[1000px] text-left text-sm">
+
+            <thead>
+                <tr class="text-[11px] uppercase tracking-wider text-muted bg-soft">
+                    <th class="py-3 px-4">User ID</th>
+                    <th class="py-3 px-4">Full Name</th>
+                    <th class="py-3 px-4">Username</th>
+                    <th class="py-3 px-4">Email Address</th>
+                    <th class="py-3 px-4">Phone Number</th>
+                    <th class="py-3 px-4">Role</th>
+                    <th class="py-3 px-4">Registered</th>
+                    <th class="py-3 px-4">Status</th>
+                    <th class="py-3 px-4 text-right">Action</th>
+                </tr>
+            </thead>
+
+            <tbody id="userBody" class="divide-y divide-line">
+
+                {% for user in users %}
+
+                <tr class="user-row hover:bg-soft transition"
+                    data-search="{{ user.full_name|default:user.username|lower }} {{ user.username|lower }} {{ user.email|lower }}"
+                    data-role="{% if user.role == 'ADMIN' or user.is_superuser or user.is_staff %}admin{% else %}user{% endif %}"
+                    data-status="{% if user.is_active %}active{% else %}inactive{% endif %}">
+
+                    <td class="py-3 px-4 font-semibold">
+                        USR-{{ user.pk|stringformat:"04d" }}
+                    </td>
+
+                    <td class="py-3 px-4 font-semibold">
+                        {{ user.full_name|default:user.username }}
+                    </td>
+
+                    <td class="py-3 px-4">
+                        {{ user.username }}
+                    </td>
+
+                    <td class="py-3 px-4">
+                        {{ user.email }}
+                    </td>
+
+                    <td class="py-3 px-4">
+                        {{ user.phone|default:"—" }}
+                    </td>
+
+                    <!-- Role -->
+                    <td class="py-3 px-4">
+                        {% if user.role == 'ADMIN' or user.is_superuser or user.is_staff %}
+                            <span class="px-2 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-bold">
+                                Admin
+                            </span>
+                        {% else %}
+                            <span class="px-2 py-1 rounded-full bg-mint text-emerald-ink text-xs font-bold">
+                                User
+                            </span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Registered Date -->
+                    <td class="py-3 px-4 whitespace-nowrap">
+                        {{ user.date_joined|date:"d M Y" }}
+                    </td>
+
+                    <!-- Status -->
+                    <td class="py-3 px-4">
+                        {% if user.is_active %}
+                            <span class="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">
+                                Active
+                            </span>
+                        {% else %}
+                            <span class="px-2 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold">
+                                Inactive
+                            </span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Action -->
+                    <td class="py-3 px-4 text-right">
+
+                        {% if user.pk != request.user.pk and not user.is_superuser %}
+
+                            <form method="POST"
+                                  action="{% url 'toggle_user_status' user.pk %}"
+                                  onsubmit="return confirm('Are you sure you want to change this user status?');">
+
+                                {% csrf_token %}
+
+                                {% if user.is_active %}
+                                    <button type="submit"
+                                        class="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold transition">
+
+                                        <span class="material-symbols-outlined text-base">
+                                            block
+                                        </span>
+                                        Deactivate
+                                    </button>
+
+                                {% else %}
+                                    <button type="submit"
+                                        class="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition">
+
+                                        <span class="material-symbols-outlined text-base">
+                                            check_circle
+                                        </span>
+                                        Activate
+                                    </button>
+                                {% endif %}
+
+                            </form>
+
+                        {% else %}
+                            <span class="text-xs text-muted">Protected</span>
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+                {% empty %}
+
+                <tr>
+                    <td colspan="9" class="py-10 text-center text-muted">
+                        No registered users found.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+        <p id="userEmpty" class="hidden py-10 text-center text-sm text-muted">
+            No users match your search or filters.
+        </p>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="flex items-center justify-between mt-4 text-sm">
+        <span class="text-muted" id="userRange"></span>
+    </div>
+
+</section>
+
+<!-- Search and Filter JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const searchInput = document.getElementById('userSearch');
+    const roleFilter = document.getElementById('roleFilter');
+    const statusFilter = document.getElementById('statusFilter');
+
+    const rows = Array.from(document.querySelectorAll('.user-row'));
+    const emptyMessage = document.getElementById('userEmpty');
+    const userRange = document.getElementById('userRange');
+
+    function filterUsers() {
+
+        const search = searchInput.value.toLowerCase().trim();
+        const role = roleFilter.value;
+        const status = statusFilter.value;
+
+        let visibleCount = 0;
+
+        rows.forEach(function (row) {
+
+            const rowSearch = row.dataset.search;
+            const rowRole = row.dataset.role;
+            const rowStatus = row.dataset.status;
+
+            const matchesSearch = rowSearch.includes(search);
+            const matchesRole = role === 'all' || rowRole === role;
+            const matchesStatus = status === 'all' || rowStatus === status;
+
+            const visible = matchesSearch && matchesRole && matchesStatus;
+
+            row.style.display = visible ? '' : 'none';
+
+            if (visible) {
+                visibleCount++;
+            }
+        });
+
+        emptyMessage.classList.toggle('hidden', visibleCount !== 0);
+
+        userRange.textContent =
+            `Showing ${visibleCount} of ${rows.length} users`;
+    }
+
+    searchInput.addEventListener('input', filterUsers);
+    roleFilter.addEventListener('change', filterUsers);
+    statusFilter.addEventListener('change', filterUsers);
+
+    filterUsers();
+
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,185 @@
+{% extends 'adminapp/admin_dashboard.html' %}
+
+{% block content %}
+
+<div class="max-w-7xl mx-auto px-4 py-8">
+
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-on-surface">Detected Scams</h1>
+        <p class="text-sm text-on-surface-variant mt-1">
+            Monitor messages and URLs identified as potentially harmful.
+        </p>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+
+        <div class="bg-card border border-line rounded-xl p-5">
+            <p class="text-sm text-on-surface-variant">Total Detected</p>
+            <h2 class="text-3xl font-bold text-red-600 mt-2">{{ total_detected }}</h2>
+        </div>
+
+        <div class="bg-card border border-line rounded-xl p-5">
+            <p class="text-sm text-on-surface-variant">Scam Messages / Spam</p>
+            <h2 class="text-3xl font-bold text-amber-600 mt-2">{{ total_message_scams }}</h2>
+        </div>
+
+        <div class="bg-card border border-line rounded-xl p-5">
+            <p class="text-sm text-on-surface-variant">High-Risk URLs</p>
+            <h2 class="text-3xl font-bold text-red-600 mt-2">{{ total_url_scams }}</h2>
+        </div>
+
+    </div>
+
+    <!-- Detected Message Scams -->
+    <div class="bg-card border border-line rounded-xl overflow-hidden mb-8">
+
+        <div class="p-5 border-b border-line">
+            <h2 class="text-lg font-bold text-on-surface">Detected Scam Messages</h2>
+            <p class="text-sm text-on-surface-variant">Scam / Phishing and Spam classifications</p>
+        </div>
+
+        <form method="GET" class="p-4 flex flex-col sm:flex-row gap-3">
+            <input
+                type="text"
+                name="message_search"
+                value="{{ message_search }}"
+                placeholder="Search message or username..."
+                class="flex-1 px-4 py-3 rounded-lg border border-line bg-soft"
+            >
+
+            <button class="px-5 py-3 rounded-lg bg-emerald-600 text-white font-semibold">
+                Search Messages
+            </button>
+        </form>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+
+                <thead class="bg-soft text-xs uppercase text-on-surface-variant">
+                    <tr>
+                        <th class="px-5 py-4">User</th>
+                        <th class="px-5 py-4">Message</th>
+                        <th class="px-5 py-4">Detection</th>
+                        <th class="px-5 py-4">Confidence</th>
+                        <th class="px-5 py-4">Date</th>
+                    </tr>
+                </thead>
+
+                <tbody class="divide-y divide-line">
+
+                    {% for scan in message_scams %}
+                    <tr>
+                        <td class="px-5 py-4 font-semibold">{{ scan.user.username }}</td>
+
+                        <td class="px-5 py-4 max-w-md">
+                            <p class="line-clamp-2">{{ scan.message }}</p>
+                        </td>
+
+                        <td class="px-5 py-4">
+                            {% if scan.result == 'Spam' %}
+                                <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
+                                    Spam
+                                </span>
+                            {% else %}
+                                <span class="px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold">
+                                    Scam / Phishing
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <td class="px-5 py-4">{{ scan.confidence|floatformat:2 }}%</td>
+
+                        <td class="px-5 py-4 whitespace-nowrap">
+                            {{ scan.created_at|date:"d M Y, h:i A" }}
+                        </td>
+                    </tr>
+
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-8 text-on-surface-variant">
+                            No detected scam messages found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- High Risk URLs -->
+    <div class="bg-card border border-line rounded-xl overflow-hidden">
+
+        <div class="p-5 border-b border-line">
+            <h2 class="text-lg font-bold text-on-surface">High-Risk URLs</h2>
+            <p class="text-sm text-on-surface-variant">URLs classified as High Risk</p>
+        </div>
+
+        <form method="GET" class="p-4 flex flex-col sm:flex-row gap-3">
+            <input
+                type="text"
+                name="url_search"
+                value="{{ url_search }}"
+                placeholder="Search URL, domain or username..."
+                class="flex-1 px-4 py-3 rounded-lg border border-line bg-soft"
+            >
+
+            <button class="px-5 py-3 rounded-lg bg-emerald-600 text-white font-semibold">
+                Search URLs
+            </button>
+        </form>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+
+                <thead class="bg-soft text-xs uppercase text-on-surface-variant">
+                    <tr>
+                        <th class="px-5 py-4">User</th>
+                        <th class="px-5 py-4">URL</th>
+                        <th class="px-5 py-4">Domain</th>
+                        <th class="px-5 py-4">Risk Score</th>
+                        <th class="px-5 py-4">Date</th>
+                    </tr>
+                </thead>
+
+                <tbody class="divide-y divide-line">
+
+                    {% for scan in url_scams %}
+                    <tr>
+                        <td class="px-5 py-4 font-semibold">{{ scan.user.username }}</td>
+
+                        <td class="px-5 py-4 max-w-xs break-all">
+                            {{ scan.url }}
+                        </td>
+
+                        <td class="px-5 py-4">{{ scan.domain }}</td>
+
+                        <td class="px-5 py-4">
+                            <span class="px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold">
+                                {{ scan.risk_score }}
+                            </span>
+                        </td>
+
+                        <td class="px-5 py-4 whitespace-nowrap">
+                            {{ scan.created_at|date:"d M Y, h:i A" }}
+                        </td>
+                    </tr>
+
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-8 text-on-surface-variant">
+                            No high-risk URLs found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

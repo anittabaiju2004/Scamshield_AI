@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>{% block title %}Dashboard{% endblock %} - ScamShield AI</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
+<script>
+  // Apply saved / system theme before paint (same key as the other pages)
+  (function () {
+    var dark = false;
+    try {
+      var saved = localStorage.getItem('scamshield-theme');
+      dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } catch (e) {}
+    if (dark) document.documentElement.classList.add('dark');
+  })();
+</script>
+<style>
+  :root {
+    --c-primary: 0 108 73; --c-on-primary: 255 255 255;
+    --c-primary-container: 16 185 129; --c-on-primary-container: 0 66 43;
+    --c-secondary: 62 102 94; --c-secondary-container: 189 233 222; --c-on-secondary-container: 66 106 98;
+    --c-secondary-fixed: 192 235 225; --c-on-secondary-fixed: 0 32 27;
+    --c-background: 243 251 248; --c-surface: 243 251 248;
+    --c-surface-container-lowest: 255 255 255; --c-surface-container-low: 237 245 242;
+    --c-surface-container: 231 240 236; --c-surface-container-high: 226 234 231; --c-surface-container-highest: 220 228 225;
+    --c-on-surface: 21 29 27; --c-on-surface-variant: 60 74 66; --c-outline: 108 122 113;
+    --c-error: 186 26 26; --c-error-container: 255 218 214; --c-on-error-container: 147 0 10;
+    --c-mint: 209 250 229; --c-emerald-ink: 4 120 87;
+    color-scheme: light;
+  }
+  .dark {
+    --c-primary: 78 222 163; --c-on-primary: 0 56 36;
+    --c-primary-container: 16 185 129; --c-on-primary-container: 0 40 26;
+    --c-secondary: 165 207 197; --c-secondary-container: 38 78 70; --c-on-secondary-container: 192 235 225;
+    --c-secondary-fixed: 38 78 70; --c-on-secondary-fixed: 192 235 225;
+    --c-background: 15 21 19; --c-surface: 15 21 19;
+    --c-surface-container-lowest: 10 15 13; --c-surface-container-low: 23 29 27;
+    --c-surface-container: 28 35 32; --c-surface-container-high: 38 45 42; --c-surface-container-highest: 50 57 54;
+    --c-on-surface: 222 228 225; --c-on-surface-variant: 187 202 191; --c-outline: 134 148 139;
+    --c-error: 255 180 171; --c-error-container: 147 0 10; --c-on-error-container: 255 218 214;
+    --c-mint: 20 56 45; --c-emerald-ink: 110 231 183;
+    color-scheme: dark; /* native controls (search ×, autofill) follow dark mode */
+  }
+  html, body { margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { overscroll-behavior: none; transition: background-color .2s, color .2s; }
+  ::-webkit-scrollbar { display: none; }
+  input, textarea, select { color: rgb(var(--c-on-surface)); }
+  input::placeholder, textarea::placeholder { color: rgb(var(--c-on-surface-variant) / .6); }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .nav-pill.is-active, .mobile-link.is-active {
+    background: rgb(var(--c-secondary-container)); color: rgb(var(--c-on-secondary-container));
+    box-shadow: 0 1px 2px rgba(0,0,0,.05), inset 0 0 0 1px rgb(var(--c-primary) / .2);
+  }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  const v = (n) => `rgb(var(--c-${n}) / <alpha-value>)`;
+  tailwind.config = {
+    darkMode: "class",
+    theme: { extend: {
+      colors: Object.fromEntries([
+        "primary","on-primary","primary-container","on-primary-container",
+        "secondary","secondary-container","on-secondary-container","secondary-fixed","on-secondary-fixed",
+        "background","surface","surface-container-lowest","surface-container-low","surface-container",
+        "surface-container-high","surface-container-highest","on-surface","on-surface-variant","outline",
+        "error","error-container","on-error-container","mint","emerald-ink"
+      ].map(n => [n, v(n)]).concat([
+        // Short names used by child pages (scanner, history, detail)
+        ["card",  v("surface-container-lowest")],
+        ["soft",  v("surface-container-low")],
+        ["line",  v("surface-container-high")],
+        ["muted", v("on-surface-variant")],
+        ["ink",   v("on-surface")]
+      ])),
+      boxShadow: { card: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,40,25,0.06)" },
+      spacing: { "gutter": "1.5rem", "margin": "2rem", "space-xs": "0.25rem", "space-sm": "0.5rem", "space-md": "1rem", "space-lg": "1.5rem", "space-xl": "2.5rem" },
+      fontFamily: {
+        "body-sm": ["Manrope"], "body-md": ["Manrope"], "body-lg": ["Manrope"], "label-md": ["Manrope"], "label-lg": ["Manrope"],
+        "headline-sm": ["Manrope"], "headline-lg": ["Manrope"], "headline-xl": ["Manrope"], "display-lg": ["Manrope"], "data-mono": ["JetBrains Mono"]
+      },
+      fontSize: {
+        "body-sm": ["0.8125rem", { lineHeight: "1.25rem", fontWeight: "400" }],
+        "body-md": ["0.9375rem", { lineHeight: "1.5rem", fontWeight: "400" }],
+        "body-lg": ["1.125rem", { lineHeight: "1.75rem", fontWeight: "400" }],
+        "label-md": ["0.75rem", { lineHeight: "1rem", letterSpacing: "0.02em", fontWeight: "600" }],
+        "label-lg": ["0.875rem", { lineHeight: "1.25rem", letterSpacing: "0.01em", fontWeight: "600" }],
+        "headline-sm": ["1.25rem", { lineHeight: "1.75rem", letterSpacing: "-0.01em", fontWeight: "600" }],
+        "headline-lg": ["1.5rem", { lineHeight: "2rem", letterSpacing: "-0.015em", fontWeight: "600" }],
+        "headline-xl": ["2.25rem", { lineHeight: "2.75rem", letterSpacing: "-0.025em", fontWeight: "700" }],
+        "display-lg": ["3rem", { lineHeight: "3.5rem", letterSpacing: "-0.03em", fontWeight: "800" }],
+        "data-mono": ["0.8125rem", { lineHeight: "1.25rem", letterSpacing: "-0.01em", fontWeight: "500" }]
+      }
+    } }
+  };
+</script>
+</head>
+<body class="bg-background font-body-md text-body-md text-on-surface antialiased min-h-screen flex flex-col">
+
+{% with url_name=request.resolver_match.url_name %}
+<!-- ================= HEADER ================= -->
+<header class="sticky top-0 z-50 w-full bg-surface/85 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.06)]">
+  <div class="h-16 max-w-[1440px] mx-auto px-4 sm:px-margin flex items-center justify-between gap-space-md">
+    <div class="flex items-center gap-space-sm">
+      <button id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu" class="lg:hidden flex items-center justify-center w-10 h-10 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" type="button">
+        <span class="material-symbols-outlined text-[24px]" id="menuIcon">menu</span>
+      </button>
+      <a class="flex items-center gap-space-sm group" href="{% url 'user_dashboard' %}">
+        <div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center shadow-[0_2px_8px_rgba(16,185,129,0.25)]">
+          <span class="material-symbols-outlined text-on-primary-container text-[22px]">shield</span>
+        </div>
+        <div class="flex flex-col">
+          <span class="font-headline-sm text-headline-sm leading-none text-on-surface tracking-tight group-hover:text-primary transition-colors">ScamShield AI</span>
+          <span class="font-label-md text-label-md text-on-surface-variant leading-tight hidden sm:block">Your Digital Safety Partner</span>
+        </div>
+      </a>
+    </div>
+
+    <!-- The active item is chosen from the current URL name -->
+    <nav class="hidden lg:flex items-center gap-space-xs p-1 rounded-xl bg-surface-container-low" aria-label="Main">
+      <a class="nav-pill px-space-md py-1.5 rounded-lg font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all {% if url_name == 'user_dashboard' %}is-active{% endif %}" href="{% url 'user_dashboard' %}">Dashboard</a>
+      <a class="nav-pill px-space-md py-1.5 rounded-lg font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all {% if url_name == 'message_scanner' %}is-active{% endif %}" href="{% url 'message_scanner' %}">Message Scanner</a>
+      <a class="nav-pill px-space-md py-1.5 rounded-lg font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all {% if url_name == 'url_scanner' or url_name == 'url_scan_history' or url_name == 'url_scan_detail' %}is-active{% endif %}" href="{% url 'url_scanner' %}">URL Scanner</a>
+      <a class="nav-pill px-space-md py-1.5 rounded-lg font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all {% if url_name == 'scan_history' or url_name == 'scan_detail' %}is-active{% endif %}" href="{% url 'scan_history' %}">Scan History</a>
+      <a class="nav-pill px-space-md py-1.5 rounded-lg font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" href="{% url 'user_dashboard' %}#safety-center">Safety Center</a>
+    </nav>
+
+    <div class="flex items-center gap-space-xs sm:gap-space-sm">
+      <button aria-label="Toggle dark mode" data-theme-toggler class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" type="button">
+        <span class="material-symbols-outlined text-[20px]" data-theme-icon>dark_mode</span>
+      </button>
+      <div class="h-6 w-px bg-surface-container-highest mx-space-xs hidden sm:block"></div>
+
+      <!-- Profile menu -->
+      <div class="relative">
+        <button id="profileBtn" aria-haspopup="true" aria-expanded="false" class="flex items-center gap-space-sm pl-1 pr-2 py-1 rounded-lg hover:bg-surface-container-high transition-colors group" type="button">
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div>
+          <span class="font-label-lg text-label-lg text-on-surface hidden md:inline-block leading-none">{{ request.user.full_name|default:request.user.username }}</span>
+          <span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-on-surface transition-colors hidden md:inline-block">expand_more</span>
+        </button>
+        <div id="profileMenu" class="hidden absolute right-0 mt-2 w-56 rounded-xl bg-surface-container-lowest shadow-lg ring-1 ring-on-surface/10 p-1.5" role="menu">
+          <div class="px-3 py-2 border-b border-on-surface/10 mb-1">
+            <div class="font-label-lg text-label-lg truncate">{{ request.user.full_name|default:request.user.username }}</div>
+            <div class="font-body-sm text-body-sm text-on-surface-variant truncate">{{ request.user.email }}</div>
+          </div>
+          <a href="{% url 'user_profile' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg font-body-sm text-body-sm hover:bg-surface-container" role="menuitem"><span class="material-symbols-outlined text-[18px]">person</span>Profile</a>
+          <a href="{% url 'scan_history' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg font-body-sm text-body-sm hover:bg-surface-container" role="menuitem"><span class="material-symbols-outlined text-[18px]">history</span>Message History</a>
+          <a href="{% url 'url_scan_history' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg font-body-sm text-body-sm hover:bg-surface-container" role="menuitem"><span class="material-symbols-outlined text-[18px]">link</span>URL History</a>
+          <a href="{% url 'user_dashboard' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg font-body-sm text-body-sm hover:bg-surface-container" role="menuitem"><span class="material-symbols-outlined text-[18px]">home</span>Home Page</a>
+          <a href="{% url 'logout' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg font-body-sm text-body-sm text-error hover:bg-error-container/50" role="menuitem"><span class="material-symbols-outlined text-[18px]">logout</span>Logout</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile menu -->
+  <div id="mobileMenu" class="lg:hidden hidden bg-surface border-t border-on-surface/10 shadow-lg">
+    <nav class="max-w-[1440px] mx-auto px-4 py-3 flex flex-col gap-1" aria-label="Mobile">
+      <a class="mobile-link px-3 py-2.5 rounded-lg font-label-lg text-label-lg {% if url_name == 'user_dashboard' %}is-active{% endif %}" href="{% url 'user_dashboard' %}">Dashboard</a>
+      <a class="mobile-link px-3 py-2.5 rounded-lg font-label-lg text-label-lg {% if url_name == 'message_scanner' %}is-active{% endif %}" href="{% url 'message_scanner' %}">Message Scanner</a>
+      <a class="mobile-link px-3 py-2.5 rounded-lg font-label-lg text-label-lg {% if url_name == 'url_scanner' or url_name == 'url_scan_history' or url_name == 'url_scan_detail' %}is-active{% endif %}" href="{% url 'url_scanner' %}">URL Scanner</a>
+      <a class="mobile-link px-3 py-2.5 rounded-lg font-label-lg text-label-lg {% if url_name == 'scan_history' or url_name == 'scan_detail' %}is-active{% endif %}" href="{% url 'scan_history' %}">Scan History</a>
+      <a class="mobile-link px-3 py-2.5 rounded-lg font-label-lg text-label-lg" href="{% url 'user_dashboard' %}#safety-center">Safety Center</a>
+    </nav>
+  </div>
+</header>
+{% endwith %}
+
+<!-- ================= DJANGO MESSAGES ================= -->
+{% if messages %}
+<div class="max-w-xl mx-auto w-full px-4 pt-6 flex flex-col gap-3 relative z-40">
+  {% for message in messages %}
+  <div class="auto-dismiss flex items-center gap-3 p-4 rounded-2xl shadow-lg transition-all duration-500 animate-[slideDown_0.4s_ease-out]
+    {% if message.tags == 'success' %}bg-emerald-500/10 text-emerald-800 dark:text-emerald-200
+    {% elif message.tags == 'error' %}bg-red-500/10 text-red-800 dark:text-red-200
+    {% elif message.tags == 'warning' %}bg-amber-500/10 text-amber-800 dark:text-amber-200
+    {% else %}bg-sky-500/10 text-sky-800 dark:text-sky-200{% endif %}" role="alert">
+    <span class="material-symbols-outlined text-[22px] shrink-0">{% if message.tags == 'success' %}check_circle{% elif message.tags == 'error' %}error{% elif message.tags == 'warning' %}warning{% else %}info{% endif %}</span>
+    <p class="flex-1 min-w-0 text-sm font-semibold">{{ message }}</p>
+    <button type="button" class="dismiss w-8 h-8 rounded-lg flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition shrink-0" aria-label="Close">
+      <span class="material-symbols-outlined text-[20px]">close</span>
+    </button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<main class="w-full max-w-[1440px] mx-auto px-4 sm:px-margin pt-space-lg pb-space-xl flex-grow">
+{% block content %}
+
+<!-- ================= 1. WELCOME ================= -->
+<section class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-space-lg mb-space-xl">
+  <div class="flex flex-col gap-space-xs max-w-2xl">
+    <span class="inline-flex self-start items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-md text-label-md mb-space-xs">
+      <span class="material-symbols-outlined text-[14px]">calendar_today</span>
+      {% now "l, d M Y" %}
+    </span>
+    <h1 class="font-headline-xl text-[1.75rem] leading-9 sm:text-headline-xl text-on-surface tracking-tight">
+      Welcome back, <span class="text-primary font-bold">{{ request.user.full_name|default:request.user.username }}</span>!
+    </h1>
+    <p class="font-body-lg text-body-lg text-on-surface-variant">
+      {% if total_scans %}
+        You've run {{ total_scans }} scan{{ total_scans|pluralize }} so far
+        {% if high_risk_count %}— <strong class="text-error">{{ high_risk_count }} high-risk</strong> threat{{ high_risk_count|pluralize }} caught.{% else %}— no high-risk threats found.{% endif %}
+      {% else %}
+        Scan your first suspicious message or link to start building your security overview.
+      {% endif %}
+    </p>
+  </div>
+  <div class="flex items-center gap-space-md p-space-md rounded-xl bg-surface-container-low shadow-sm">
+    <div class="relative w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center shadow-[0_4px_16px_rgba(16,185,129,0.35)] shrink-0">
+      <span class="material-symbols-outlined text-on-primary-container text-[32px]">verified_user</span>
+      <span class="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-primary ring-2 ring-surface-container-lowest"></span>
+      </span>
+    </div>
+    <div class="flex flex-col">
+      <span class="font-label-lg text-label-lg text-on-surface font-bold">Protection Active</span>
+      <span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Message &amp; URL scanning online</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 2. METRIC CARDS ================= -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md mb-space-xl">
+  <!-- Total -->
+  <div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+    <div>
+      <div class="flex items-center justify-between mb-space-md">
+        <span class="font-label-lg text-label-lg text-on-surface-variant">Total Scans</span>
+        <div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-on-primary-container transition-colors"><span class="material-symbols-outlined text-[20px]">radar</span></div>
+      </div>
+      <span class="font-display-lg text-display-lg leading-none text-on-surface font-extrabold tracking-tight">{{ total_scans }}</span>
+    </div>
+    <div class="pt-space-sm mt-space-sm flex items-center gap-3 font-body-sm text-body-sm text-on-surface-variant">
+      <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">chat</span>{{ message_total }} messages</span>
+      <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">link</span>{{ url_total }} URLs</span>
+    </div>
+  </div>
+  <!-- Safe -->
+  <div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+    <div>
+      <div class="flex items-center justify-between mb-space-md">
+        <span class="font-label-lg text-label-lg text-on-surface-variant">Safe</span>
+        <div class="w-10 h-10 rounded-lg bg-emerald-500/15 flex items-center justify-center text-emerald-600 dark:text-emerald-400"><span class="material-symbols-outlined text-[20px]">verified</span></div>
+      </div>
+      <span class="font-display-lg text-display-lg leading-none text-emerald-600 dark:text-emerald-400 font-extrabold tracking-tight">{{ safe_count }}</span>
+    </div>
+    <div class="pt-space-sm mt-space-sm">
+      <div class="h-1.5 rounded-full bg-surface-container overflow-hidden mb-2"><div class="h-full rounded-full bg-emerald-500" style="width: {{ safe_percentage|stringformat:'.1f' }}%"></div></div>
+      <div class="flex items-center justify-between font-body-sm text-body-sm text-on-surface-variant">
+        <span>{{ safe_percentage }}% of scans</span><span class="font-data-mono text-[11px]">Legitimate · Low Risk</span>
+      </div>
+    </div>
+  </div>
+  <!-- Suspicious -->
+  <div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+    <div>
+      <div class="flex items-center justify-between mb-space-md">
+        <span class="font-label-lg text-label-lg text-on-surface-variant">Suspicious</span>
+        <div class="w-10 h-10 rounded-lg bg-amber-500/15 flex items-center justify-center text-amber-600 dark:text-amber-400"><span class="material-symbols-outlined text-[20px]">warning</span></div>
+      </div>
+      <span class="font-display-lg text-display-lg leading-none text-amber-600 dark:text-amber-400 font-extrabold tracking-tight">{{ suspicious_count }}</span>
+    </div>
+    <div class="pt-space-sm mt-space-sm">
+      <div class="h-1.5 rounded-full bg-surface-container overflow-hidden mb-2"><div class="h-full rounded-full bg-amber-500" style="width: {{ suspicious_percentage|stringformat:'.1f' }}%"></div></div>
+      <div class="flex items-center justify-between font-body-sm text-body-sm text-on-surface-variant">
+        <span>{{ suspicious_percentage }}% of scans</span><span class="font-data-mono text-[11px]">Spam · Suspicious</span>
+      </div>
+    </div>
+  </div>
+  <!-- High risk -->
+  <div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+    <div>
+      <div class="flex items-center justify-between mb-space-md">
+        <span class="font-label-lg text-label-lg text-on-surface-variant">High Risk</span>
+        <div class="w-10 h-10 rounded-lg bg-red-500/15 flex items-center justify-center text-red-600 dark:text-red-400"><span class="material-symbols-outlined text-[20px]">local_fire_department</span></div>
+      </div>
+      <span class="font-display-lg text-display-lg leading-none text-red-600 dark:text-red-400 font-extrabold tracking-tight">{{ high_risk_count }}</span>
+    </div>
+    <div class="pt-space-sm mt-space-sm">
+      <div class="h-1.5 rounded-full bg-surface-container overflow-hidden mb-2"><div class="h-full rounded-full bg-red-600" style="width: {{ high_risk_percentage|stringformat:'.1f' }}%"></div></div>
+      <div class="flex items-center justify-between font-body-sm text-body-sm text-on-surface-variant">
+        <span>{{ high_risk_percentage }}% of scans</span><span class="font-data-mono text-[11px]">Scam · High Risk</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 3. QUICK SCAN ================= -->
+<section class="mb-space-xl">
+  <div class="mb-space-lg">
+    <span class="font-label-md text-label-md uppercase tracking-wider text-primary font-bold">Scanner</span>
+    <h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight mt-1">Scan Something Suspicious</h2>
+  </div>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-space-lg items-stretch">
+
+    <!-- Message: posts straight to the message_scanner view -->
+    <form method="POST" action="{% url 'message_scanner' %}" id="quickMessageForm" class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col gap-space-md">
+      {% csrf_token %}
+      <div class="flex items-center gap-space-sm">
+        <div class="w-11 h-11 rounded-xl bg-secondary-container text-on-secondary-container flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-[22px]">mark_chat_unread</span></div>
+        <div class="flex-1">
+          <h3 class="font-headline-sm text-headline-sm font-bold">Analyze a Message</h3>
+          <span class="font-body-sm text-body-sm text-on-surface-variant">SMS, WhatsApp or email text</span>
+        </div>
+        <span class="font-data-mono text-[11px] text-on-surface-variant">{{ message_total }} scanned</span>
+      </div>
+      <label for="quickMessage" class="sr-only">Message to analyze</label>
+      <textarea id="quickMessage" name="message" rows="4" maxlength="10000" required placeholder="Paste a suspicious message here..."
+        class="w-full p-space-md rounded-lg bg-surface-container-low border border-transparent font-body-md text-body-md focus:outline-none focus:border-primary-container focus:ring-4 focus:ring-primary-container/15 transition-all resize-none"></textarea>
+      <div class="flex items-center gap-space-sm mt-auto">
+        <a href="{% url 'scan_history' %}" class="px-4 py-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container font-label-lg text-label-lg transition-colors">History</a>
+        <button type="submit" class="flex-1 flex items-center justify-center gap-2 px-space-lg py-2.5 rounded-lg bg-primary hover:opacity-90 text-on-primary font-label-lg text-label-lg shadow-[0_2px_12px_rgba(0,108,73,0.3)] transition-all disabled:opacity-60">
+          <span class="material-symbols-outlined text-[18px]">auto_awesome</span><span>Analyze Message</span>
+        </button>
+      </div>
+    </form>
+
+    <!-- URL: opens the URL scanner page -->
+    <div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col gap-space-md">
+      <div class="flex items-center gap-space-sm">
+        <div class="w-11 h-11 rounded-xl bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-[22px]">travel_explore</span></div>
+        <div class="flex-1">
+          <h3 class="font-headline-sm text-headline-sm font-bold">Check a Website</h3>
+          <span class="font-body-sm text-body-sm text-on-surface-variant">Lookalike domains, insecure links, phishing pages</span>
+        </div>
+        <span class="font-data-mono text-[11px] text-on-surface-variant">{{ url_total }} scanned</span>
+      </div>
+      <ul class="flex flex-col gap-2 font-body-sm text-body-sm text-on-surface-variant">
+        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-primary">lock</span>HTTPS and connection security</li>
+        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-primary">spellcheck</span>Lookalike and suspicious domain patterns</li>
+        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-primary">key</span>Login and payment bait keywords</li>
+      </ul>
+      <div class="flex items-center gap-space-sm mt-auto">
+        <a href="{% url 'url_scan_history' %}" class="px-4 py-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container font-label-lg text-label-lg transition-colors">History</a>
+        <a href="{% url 'url_scanner' %}" class="flex-1 flex items-center justify-center gap-2 px-space-lg py-2.5 rounded-lg bg-primary hover:opacity-90 text-on-primary font-label-lg text-label-lg shadow-[0_2px_12px_rgba(0,108,73,0.3)] transition-all">
+          <span class="material-symbols-outlined text-[18px]">travel_explore</span><span>Open URL Scanner</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 4. CHARTS ================= -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg mb-space-xl">
+  <!-- Donut -->
+  <div class="lg:col-span-5 p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col">
+    <div class="flex items-center justify-between mb-space-md">
+      <div>
+        <h3 class="font-headline-sm text-headline-sm font-bold">Threat Distribution</h3>
+        <span class="font-body-sm text-body-sm text-on-surface-variant">All your scans by risk level</span>
+      </div>
+      <span class="p-2 rounded-lg bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined text-[20px]">pie_chart</span></span>
+    </div>
+    <div class="relative flex items-center justify-center my-space-md">
+      <svg class="w-56 h-56 -rotate-90" viewBox="0 0 160 160" id="donut" role="img" aria-label="Risk distribution: {{ safe_count }} safe, {{ suspicious_count }} suspicious, {{ high_risk_count }} high risk">
+        <circle cx="80" cy="80" fill="none" r="62" stroke-width="14" style="stroke: rgb(var(--c-surface-container))"></circle>
+      </svg>
+      <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+        <span class="font-display-lg text-headline-xl font-extrabold leading-none">{{ total_scans }}</span>
+        <span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mt-1">Total Scans</span>
+      </div>
+    </div>
+    <div class="grid grid-cols-3 gap-2 text-center">
+      <div class="p-space-sm rounded-lg bg-surface-container-low flex flex-col">
+        <div class="flex items-center justify-center gap-1.5 mb-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span><span class="font-label-md text-label-md">Safe</span></div>
+        <span class="font-headline-sm text-headline-sm font-bold">{{ safe_percentage }}%</span>
+        <span class="font-data-mono text-[11px] text-on-surface-variant">{{ safe_count }} item{{ safe_count|pluralize }}</span>
+      </div>
+      <div class="p-space-sm rounded-lg bg-surface-container-low flex flex-col">
+        <div class="flex items-center justify-center gap-1.5 mb-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span><span class="font-label-md text-label-md">Suspicious</span></div>
+        <span class="font-headline-sm text-headline-sm font-bold">{{ suspicious_percentage }}%</span>
+        <span class="font-data-mono text-[11px] text-on-surface-variant">{{ suspicious_count }} item{{ suspicious_count|pluralize }}</span>
+      </div>
+      <div class="p-space-sm rounded-lg bg-surface-container-low flex flex-col">
+        <div class="flex items-center justify-center gap-1.5 mb-1"><span class="w-2.5 h-2.5 rounded-full bg-red-600"></span><span class="font-label-md text-label-md">High Risk</span></div>
+        <span class="font-headline-sm text-headline-sm font-bold text-red-600 dark:text-red-400">{{ high_risk_percentage }}%</span>
+        <span class="font-data-mono text-[11px] text-on-surface-variant">{{ high_risk_count }} item{{ high_risk_count|pluralize }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weekly bars -->
+  <div class="lg:col-span-7 p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm mb-space-md">
+      <div>
+        <h3 class="font-headline-sm text-headline-sm font-bold">Last 7 Days</h3>
+        <span class="font-body-sm text-body-sm text-on-surface-variant">{{ week_total }} scan{{ week_total|pluralize }} this week, by risk level</span>
+      </div>
+      <div class="flex items-center gap-3 text-[11px] font-label-md">
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-500"></span>Safe</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-amber-500"></span>Suspicious</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-red-600"></span>High</span>
+      </div>
+    </div>
+    <div class="flex-1 min-h-[220px] flex gap-2">
+      <div class="flex flex-col justify-between text-[11px] font-data-mono text-on-surface-variant pb-7 text-right w-6" id="yAxis"></div>
+      <div class="flex-1 flex flex-col">
+        <div class="relative flex-1 grid grid-cols-7 gap-2 sm:gap-4 items-end border-b border-surface-container-high" id="bars">
+          <div class="absolute inset-0 flex flex-col justify-between pointer-events-none" aria-hidden="true">
+            <div class="border-t border-dashed border-surface-container-high"></div>
+            <div class="border-t border-dashed border-surface-container-high"></div>
+            <div></div>
+          </div>
+        </div>
+        <div class="grid grid-cols-7 gap-2 sm:gap-4 pt-2 text-center font-data-mono text-[11px] text-on-surface-variant" id="barLabels"></div>
+      </div>
+    </div>
+
+    <!-- Message vs URL split -->
+    <div class="mt-space-md p-space-md rounded-lg bg-surface-container-low">
+      <div class="flex items-center justify-between font-label-md text-label-md mb-2">
+        <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-primary">chat</span>Messages · {{ message_total }}</span>
+        <span class="flex items-center gap-1.5">URLs · {{ url_total }}<span class="material-symbols-outlined text-[16px] text-sky-600 dark:text-sky-400">link</span></span>
+      </div>
+      <div class="flex h-2.5 rounded-full overflow-hidden bg-surface-container">
+        {% if total_scans %}
+        <div class="bg-primary h-full" style="width: {{ message_percentage|stringformat:'.1f' }}%"></div>
+        <div class="bg-sky-500 h-full" style="width: {{ url_percentage|stringformat:'.1f' }}%"></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 5. RECENT SCAN HISTORY ================= -->
+<section class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm mb-space-xl">
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md mb-space-lg">
+    <div>
+      <h2 class="font-headline-lg text-headline-lg tracking-tight">Recent Scan History</h2>
+      <span class="font-body-sm text-body-sm text-on-surface-variant">Your last {{ recent_history|length }} scans across messages and URLs</span>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <div class="flex items-center p-1 rounded-lg bg-surface-container-low" role="tablist">
+        <button class="filter-tab px-3 py-1.5 rounded-md font-label-md text-label-md bg-surface-container-highest text-on-surface transition-all" data-filter="all" type="button" role="tab" aria-selected="true">All</button>
+        <button class="filter-tab px-3 py-1.5 rounded-md font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-all" data-filter="Message" type="button" role="tab" aria-selected="false">Messages</button>
+        <button class="filter-tab px-3 py-1.5 rounded-md font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-all" data-filter="URL" type="button" role="tab" aria-selected="false">URLs</button>
+        <button class="filter-tab px-3 py-1.5 rounded-md font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-all" data-filter="threats" type="button" role="tab" aria-selected="false">Threats</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-left border-collapse min-w-[760px]">
+      <thead>
+        <tr class="bg-surface-container-low font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">
+          <th class="py-3 px-4 rounded-l-lg">Scan ID</th>
+          <th class="py-3 px-4">Content</th>
+          <th class="py-3 px-4">Type</th>
+          <th class="py-3 px-4">Result</th>
+          <th class="py-3 px-4">Score</th>
+          <th class="py-3 px-4">Date</th>
+          <th class="py-3 px-4 rounded-r-lg text-right">Action</th>
+        </tr>
+      </thead>
+      <tbody class="font-body-sm text-body-sm divide-y divide-surface-container" id="historyBody">
+        {% for item in recent_history %}
+        <tr class="history-row hover:bg-surface-container-low/60 transition-colors" data-type="{{ item.type }}" data-level="{{ item.level }}">
+          <td class="py-3.5 px-4 font-data-mono text-data-mono text-on-surface-variant whitespace-nowrap">{{ item.code }}</td>
+          <td class="py-3.5 px-4 max-w-xs md:max-w-sm">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[18px] shrink-0
+                {% if item.level == 'safe' %}text-emerald-600 dark:text-emerald-400{% elif item.level == 'suspicious' %}text-amber-600 dark:text-amber-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+                {% if item.level == 'safe' %}check_circle{% elif item.level == 'suspicious' %}warning{% else %}dangerous{% endif %}
+              </span>
+              <span class="truncate font-semibold {% if item.type == 'URL' %}font-data-mono text-[12px]{% endif %}" title="{{ item.content }}">{{ item.content|truncatechars:70 }}</span>
+            </div>
+          </td>
+          <td class="py-3.5 px-4">
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-label-md text-label-md
+              {% if item.type == 'URL' %}bg-sky-500/10 text-sky-700 dark:text-sky-300{% else %}bg-surface-container text-on-surface{% endif %}">
+              <span class="material-symbols-outlined text-[13px]">{% if item.type == 'URL' %}link{% else %}chat{% endif %}</span>{{ item.type }}
+            </span>
+          </td>
+          <td class="py-3.5 px-4">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-label-md text-label-md font-bold whitespace-nowrap
+              {% if item.level == 'safe' %}bg-emerald-500/10 text-emerald-700 dark:text-emerald-300
+              {% elif item.level == 'suspicious' %}bg-amber-500/15 text-amber-700 dark:text-amber-300
+              {% else %}bg-red-500/10 text-red-700 dark:text-red-300{% endif %}">
+              <span class="w-1.5 h-1.5 rounded-full {% if item.level == 'safe' %}bg-emerald-500{% elif item.level == 'suspicious' %}bg-amber-500{% else %}bg-red-600{% endif %}"></span>
+              {{ item.result }}
+            </span>
+          </td>
+          <td class="py-3.5 px-4 whitespace-nowrap" title="{{ item.score_label }}">
+            <span class="font-data-mono text-data-mono font-semibold">{{ item.score|floatformat:"-1" }}{% if item.type == 'Message' %}%{% else %}/100{% endif %}</span>
+            <span class="block text-[10px] text-on-surface-variant">{{ item.score_label }}</span>
+          </td>
+          <td class="py-3.5 px-4 font-data-mono text-[12px] text-on-surface-variant whitespace-nowrap">{{ item.created_at|date:"d M Y, h:i A" }}</td>
+          <td class="py-3.5 px-4 text-right">
+            <a href="{% url item.detail_url item.id %}" class="inline-flex items-center gap-1 h-8 px-3 rounded-lg bg-surface-container hover:bg-primary hover:text-on-primary font-label-md text-label-md transition-colors">
+              View <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="py-12 text-center">
+            <span class="material-symbols-outlined text-[40px] text-on-surface-variant">inbox</span>
+            <p class="font-label-lg text-label-lg mt-2">No scans yet</p>
+            <p class="font-body-sm text-body-sm text-on-surface-variant">Analyze a message or URL above and it will appear here.</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p id="filterEmpty" class="hidden py-8 text-center font-body-sm text-body-sm text-on-surface-variant">No scans match this filter.</p>
+  </div>
+
+  {% if recent_history %}
+  <div class="flex flex-wrap justify-end gap-2 mt-space-md">
+    <a href="{% url 'scan_history' %}" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container font-label-md text-label-md transition-colors">All message scans <span class="material-symbols-outlined text-[16px]">arrow_forward</span></a>
+    <a href="{% url 'url_scan_history' %}" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container font-label-md text-label-md transition-colors">All URL scans <span class="material-symbols-outlined text-[16px]">arrow_forward</span></a>
+  </div>
+  {% endif %}
+</section>
+
+<!-- ================= 6. SAFETY CENTER ================= -->
+<section id="safety-center" class="scroll-mt-20 mb-space-xl">
+  <div class="flex flex-col mb-space-lg">
+    <span class="font-label-md text-label-md uppercase tracking-wider text-primary font-bold">Safety Center</span>
+    <h2 class="font-headline-lg text-headline-lg tracking-tight mt-1">Stay One Step Ahead</h2>
+    <p class="font-body-md text-body-md text-on-surface-variant mt-0.5">Simple habits that stop most scams.</p>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-space-lg">
+    <div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all group">
+      <div class="w-12 h-12 rounded-xl bg-secondary-container text-on-secondary-container flex items-center justify-center mb-space-md group-hover:scale-105 transition-transform"><span class="material-symbols-outlined text-[24px]">key</span></div>
+      <h3 class="font-headline-sm text-headline-sm font-bold mb-space-xs">Protect Your OTP</h3>
+      <p class="font-body-md text-body-md text-on-surface-variant">Never share OTPs, passwords or card PINs over SMS, phone or chat. Real banks will never ask for your verification codes.</p>
+    </div>
+    <div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all group">
+      <div class="w-12 h-12 rounded-xl bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center mb-space-md group-hover:scale-105 transition-transform"><span class="material-symbols-outlined text-[24px]">travel_explore</span></div>
+      <h3 class="font-headline-sm text-headline-sm font-bold mb-space-xs">Verify Website URLs</h3>
+      <p class="font-body-md text-body-md text-on-surface-variant">Check the domain before entering details. Watch for swapped letters (like <code class="font-data-mono">rn</code> instead of <code class="font-data-mono">m</code>) and unusual endings like .xyz or .top.</p>
+    </div>
+    <div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all group">
+      <div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-secondary mb-space-md group-hover:scale-105 transition-transform"><span class="material-symbols-outlined text-[24px]">support_agent</span></div>
+      <h3 class="font-headline-sm text-headline-sm font-bold mb-space-xs">Report Cyber Fraud</h3>
+      <p class="font-body-md text-body-md text-on-surface-variant">Lost money or shared details? Call the <strong>1930</strong> helpline or report at <strong>cybercrime.gov.in</strong> as soon as possible, and contact your bank.</p>
+    </div>
+  </div>
+</section>
+
+{{ chart_data|json_script:"chart-data" }}
+
+<!-- Dashboard-only script: charts + history filter (runs only on this page) -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const dataEl = document.getElementById('chart-data');
+  if (!dataEl) return;
+  const data = JSON.parse(dataEl.textContent);
+  const COLORS = { safe: '#10b981', suspicious: '#f59e0b', high: '#dc2626' };
+  const NS = 'http://www.w3.org/2000/svg';
+
+  /* ---------- Donut ---------- */
+  const donut = document.getElementById('donut');
+  const total = data.levels.safe + data.levels.suspicious + data.levels.high;
+  if (donut && total > 0) {
+    const C = 2 * Math.PI * 62;
+    const parts = ['safe', 'suspicious', 'high'].filter(k => data.levels[k] > 0);
+    const GAP = parts.length > 1 ? 3 : 0;
+    let offset = 0;
+    parts.forEach(k => {
+      const len = data.levels[k] / total * C;
+      const seg = document.createElementNS(NS, 'circle');
+      seg.setAttribute('cx', 80); seg.setAttribute('cy', 80); seg.setAttribute('r', 62);
+      seg.setAttribute('fill', 'none'); seg.setAttribute('stroke-width', 14);
+      seg.style.stroke = COLORS[k];
+      seg.setAttribute('stroke-dasharray', `${Math.max(len - GAP, 0.5)} ${C}`);
+      seg.setAttribute('stroke-dashoffset', -offset);
+      const t = document.createElementNS(NS, 'title');
+      t.textContent = `${k}: ${data.levels[k]}`;
+      seg.appendChild(t);
+      donut.appendChild(seg);
+      offset += len;
+    });
+  }
+
+  /* ---------- Weekly stacked bars ---------- */
+  const bars = document.getElementById('bars');
+  if (bars) {
+    const week = data.weekly;
+    const max = Math.max(1, ...week.map(d => d.safe + d.suspicious + d.high));
+    const top = Math.max(2, Math.ceil(max / 2) * 2); // even number so the middle line is a whole number
+    document.getElementById('yAxis').innerHTML = `<span>${top}</span><span>${top / 2}</span><span>0</span>`;
+
+    week.forEach(d => {
+      const dayTotal = d.safe + d.suspicious + d.high;
+      const col = document.createElement('div');
+      col.className = 'relative h-full flex flex-col justify-end items-center group';
+      col.innerHTML = `
+        <div class="absolute -top-1 -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 px-2.5 py-1.5 rounded-lg bg-on-surface text-surface text-[11px] whitespace-nowrap shadow-lg">
+          <b>${d.date}: ${dayTotal} scan${dayTotal === 1 ? '' : 's'}</b><br>Safe ${d.safe} · Susp. ${d.suspicious} · High ${d.high}
+        </div>
+        <div class="w-full max-w-[40px] flex flex-col-reverse rounded-t-md overflow-hidden ${dayTotal ? '' : 'bg-surface-container'}"
+             style="height:${dayTotal ? dayTotal / top * 100 : 2}%"></div>`;
+      const stack = col.lastElementChild;
+      ['safe', 'suspicious', 'high'].forEach(k => {
+        if (!d[k]) return;
+        const seg = document.createElement('div');
+        seg.style.height = (d[k] / dayTotal * 100) + '%';
+        seg.style.background = COLORS[k];
+        stack.appendChild(seg);
+      });
+      bars.appendChild(col);
+
+      const lab = document.createElement('span');
+      lab.textContent = d.is_today ? 'Today' : d.day;
+      if (d.is_today) lab.className = 'text-primary font-bold';
+      document.getElementById('barLabels').appendChild(lab);
+    });
+  }
+
+  /* ---------- History filter tabs ---------- */
+  const rows = document.querySelectorAll('.history-row');
+  document.querySelectorAll('.filter-tab').forEach(btn => btn.addEventListener('click', () => {
+    const f = btn.dataset.filter;
+    document.querySelectorAll('.filter-tab').forEach(b => {
+      const on = b === btn;
+      b.classList.toggle('bg-surface-container-highest', on);
+      b.classList.toggle('text-on-surface', on);
+      b.classList.toggle('text-on-surface-variant', !on);
+      b.setAttribute('aria-selected', String(on));
+    });
+    let visible = 0;
+    rows.forEach(r => {
+      const show = f === 'all' || (f === 'threats' ? r.dataset.level !== 'safe' : r.dataset.type === f);
+      r.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    document.getElementById('filterEmpty').classList.toggle('hidden', visible > 0 || rows.length === 0);
+  }));
+
+  /* ---------- Quick message form: loading state ---------- */
+  const qf = document.getElementById('quickMessageForm');
+  if (qf) qf.addEventListener('submit', (e) => {
+    const ta = document.getElementById('quickMessage');
+    if (!ta.value.trim()) { e.preventDefault(); ta.focus(); return; }
+    const btn = qf.querySelector('button[type=submit]');
+    btn.disabled = true;
+    btn.lastElementChild.textContent = 'Analyzing…';
+  });
+});
+</script>
+
+{% endblock %}
+</main>
+
+<footer class="w-full bg-surface-container-low mt-auto">
+  <div class="max-w-[1440px] mx-auto px-4 sm:px-margin py-space-lg flex flex-col sm:flex-row items-center justify-between gap-space-md">
+    <div class="flex items-center gap-space-sm">
+      <div class="w-6 h-6 rounded-md bg-primary-container flex items-center justify-center"><span class="material-symbols-outlined text-on-primary-container text-[14px]">verified_user</span></div>
+      <span class="font-body-sm text-body-sm text-on-surface-variant">© {% now "Y" %} ScamShield AI. All rights reserved.</span>
+    </div>
+    <div class="flex items-center gap-space-md">
+      <a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" href="#">Privacy Policy</a>
+      <a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" href="#">Terms of Service</a>
+    </div>
+  </div>
+</footer>
+
+<!-- Layout script: shared by every page that extends this template -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const $ = (id) => document.getElementById(id);
+  const root = document.documentElement;
+
+  /* Theme */
+  const syncThemeIcons = () => document.querySelectorAll('[data-theme-icon]').forEach(el => {
+    el.textContent = root.classList.contains('dark') ? 'light_mode' : 'dark_mode';
+  });
+  syncThemeIcons();
+  document.querySelectorAll('[data-theme-toggler]').forEach(btn => btn.addEventListener('click', () => {
+    root.classList.toggle('dark');
+    try { localStorage.setItem('scamshield-theme', root.classList.contains('dark') ? 'dark' : 'light'); } catch (e) {}
+    syncThemeIcons();
+  }));
+
+  /* Mobile menu */
+  const menu = $('mobileMenu'), menuBtn = $('menuBtn');
+  const setMenu = (open) => {
+    if (!menu) return;
+    menu.classList.toggle('hidden', !open);
+    menuBtn.setAttribute('aria-expanded', String(open));
+    $('menuIcon').textContent = open ? 'close' : 'menu';
+  };
+  if (menuBtn) menuBtn.addEventListener('click', () => setMenu(menu.classList.contains('hidden')));
+  if (menu) menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setMenu(false)));
+  window.addEventListener('resize', () => { if (window.innerWidth >= 1024) setMenu(false); });
+
+  /* Profile dropdown */
+  const profileBtn = $('profileBtn'), profileMenu = $('profileMenu');
+  if (profileBtn && profileMenu) {
+    profileBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = profileMenu.classList.toggle('hidden') === false;
+      profileBtn.setAttribute('aria-expanded', String(open));
+    });
+    document.addEventListener('click', (e) => {
+      if (!profileMenu.contains(e.target)) { profileMenu.classList.add('hidden'); profileBtn.setAttribute('aria-expanded', 'false'); }
+    });
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { if (profileMenu) profileMenu.classList.add('hidden'); setMenu(false); }
+  });
+
+  /* Messages: close button + auto-dismiss */
+  document.querySelectorAll('.auto-dismiss').forEach(alert => {
+    const close = () => {
+      alert.classList.add('opacity-0', 'translate-y-2');
+      setTimeout(() => alert.remove(), 500);
+    };
+    const btn = alert.querySelector('.dismiss');
+    if (btn) btn.addEventListener('click', close);
+    setTimeout(close, 5000);
+  });
+});
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
